@@ -1,0 +1,3 @@
+display_name: Supabase Long Jobs
+short_description: Implement resumable Supabase long-running jobs with Edge Functions, pg_cron, progress, retry, and safe state storage.
+default_prompt: Implement this as a Supabase resumable long-job workflow. Do not use one long Edge Function request. Create start_job, process_jobs, job state storage, progress updates, locking, and retry behavior.

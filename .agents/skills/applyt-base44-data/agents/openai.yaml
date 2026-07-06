@@ -1,0 +1,4 @@
+interface:
+  display_name: "Applyt Base44 Data"
+  short_description: "Diagnose Applyt Base44 runtime state"
+  default_prompt: "Use $applyt-base44-data to inspect why an Applyt Operating System is not opening."

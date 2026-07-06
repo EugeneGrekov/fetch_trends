@@ -1,0 +1,4 @@
+interface:
+  display_name: "Applyt Prompt Library"
+  short_description: "Fetch admin-only Applyt prompt records"
+  default_prompt: "Use $applyt-prompt-library to fetch prompt metadata for an Applyt OS job."
