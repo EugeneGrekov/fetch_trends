@@ -172,6 +172,8 @@ Commands:
 | `autocomplete` | Existing Google Autocomplete research utility. |
 | `validate` | Full validation job from idea to report. |
 | `report` | Read or export the latest stored report by idea ID or job ID. |
+| `payment-test` | Generate a payment-intent test spec from stored validation evidence. |
+| `seo-plan` | Generate an evidence-backed SEO page plan from stored queries and evidence. |
 | `db` | Migration and database inspection tasks. |
 | `web` | Start local web interface. |
 | `worker` | Run queued validation jobs. |
@@ -507,6 +509,8 @@ reports
 - `reports` reference evidence indirectly through `idea_id` and `job_id`.
 - Scores are snapshots. Re-scoring should create a new score row.
 - Reports are snapshots. Re-reporting should create a new report row.
+- Derived experiment artifacts use `report_type = payment_test_spec` and `report_type = seo_plan`.
+- Derived artifacts may also be written to `artifacts/ideas/<idea-id>/` for Markdown/JSON export, but SQLite remains the local source of truth.
 
 ## 7. Validation Contracts
 
