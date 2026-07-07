@@ -80,6 +80,13 @@ Run the first persisted validation flow:
 npm run validate -- --idea "automatic app that saves parking location when Bluetooth disconnects"
 ```
 
+Read the latest stored report for an idea or job:
+
+```bash
+npm run report -- --idea-id 1 --format markdown
+npm run report -- --job-id 1 --format json
+```
+
 ## Inputs
 
 - `--seed <phrase>` can be passed multiple times.
@@ -109,6 +116,28 @@ Custom modifiers replace the default modifier list.
 - `npm run db -- --migrate` creates the schema and applies pending migrations.
 - `npm run validate -- --idea "..."`
   stores ideas, jobs, tool runs, queries, autocomplete predictions, scores, and reports.
+- `npm run report -- --idea-id <id>` or `--job-id <id>`
+  reads the latest stored report without rerunning collection.
+
+## Project-Local Codex Skills
+
+This repo ships three project-local skills under `.codex/skills/`:
+
+- `micro-business-autocomplete`
+  runs autocomplete research and summarizes search-language evidence.
+- `micro-business-validate`
+  runs the local validation pipeline, then inspects the stored report.
+- `micro-business-report`
+  reads a stored report by idea ID or job ID and turns it into a concise summary.
+
+These skills wrap stable local commands. They do not replace the CLI, bypass the
+SQLite evidence store, or invent proof.
+
+Important limits:
+
+- Autocomplete is wording evidence, not demand volume.
+- The current validation pipeline is search-language-first.
+- Only real payment validates willingness to pay.
 - `validate` keeps the existing autocomplete CSV/JSON export behavior by writing artifacts under `./results/validate/`.
 
 ## Default Modifiers

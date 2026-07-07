@@ -69,3 +69,14 @@ Defaults:
 
 - Query generation is intentionally bounded to 12 queries in the validate pipeline so autocomplete collection stays local and tractable.
 - Deterministic evidence summaries and reports still exist, so the pipeline remains usable without Codex.
+
+## Test Coverage Added
+
+- `src/ai/json-output.test.ts`
+  - raw JSON, fenced JSON, and invalid JSON handling
+- `src/ai/prompt-loader.test.ts`
+  - prompt lookup and prompt rendering
+- `src/ai/runner.test.ts`
+  - successful and failed `tool_runs` persistence with a fake executor
+- `src/validation/orchestrator.test.ts`
+  - deterministic validate fallback when AI output is invalid
