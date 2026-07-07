@@ -73,6 +73,7 @@ src/
     measurement.ts
     decide.ts
     revalidate.ts
+    diagnose.ts
 
   decision-loop/
     decision-engine.ts
@@ -87,6 +88,16 @@ src/
     queue.ts
     revalidation-runner.ts
     revalidation-report.ts
+    types.ts
+
+  diagnostics/
+    config-check.ts
+    db-health.ts
+    job-health.ts
+    collector-health.ts
+    artifact-health.ts
+    command-health.ts
+    report.ts
     types.ts
 
   utilities/
@@ -210,6 +221,7 @@ Commands:
 | `measurement` | Import local experiment events, evaluate thresholds, and persist measurement reports. |
 | `decide` | Turn stored validation and measurement evidence into one decision memo and next action. |
 | `revalidate` | Scan for stale evidence, queue local revalidation tasks, run pending tasks, and persist refreshed score/report snapshots. |
+| `diagnose` | Run local operator diagnostics for configuration, DB, jobs, collectors, artifacts, and commands. |
 | `db` | Migration and database inspection tasks. |
 | `web` | Start local web interface. |
 | `worker` | Run queued validation jobs. |
@@ -352,7 +364,27 @@ Rules:
 - The decision loop does not collect new evidence, process payments, or compare a portfolio of ideas.
 - AI may draft narrative later, but deterministic decision values remain the source of truth.
 
-### 4.8 Codex Skills
+### 4.8 Operator Diagnostics
+
+Operator diagnostics are a read-only local inspection layer over the CLI, SQLite database, collector configuration, artifacts, and package scripts.
+
+Responsibilities:
+
+- Explain missing or broken local setup without mutating data.
+- Check DB file health, required tables, migrations, row counts, and SQLite integrity.
+- Surface failed jobs, stale pending/running jobs, failed or blocked tool runs, and completed validation jobs without reports.
+- Report collector readiness from local config and environment presence only.
+- Check generated artifact references, orphan files, artifact directory size, and configured backup/export directories.
+- Produce human-readable Markdown and JSON reports.
+
+Rules:
+
+- Do not apply migrations, repair databases, delete artifacts, or auto-fix commands.
+- Do not print API key or secret values; report only configured or missing.
+- Do not call live external services by default.
+- Live diagnostics must remain explicitly opt-in and must not be used by default tests.
+
+### 4.9 Codex Skills
 
 Codex skills are agent-facing wrappers around local tools.
 
@@ -481,6 +513,19 @@ CLI scan
   -> append revalidation report
   -> preserve historical evidence and reports
 ```
+
+### 5.7 Operator Diagnostics Flow
+
+```text
+npm run diagnose
+  -> resolve local paths and environment presence
+  -> inspect package scripts and collector config
+  -> open SQLite read-only when available
+  -> inspect jobs, tool runs, reports, migrations, and artifacts
+  -> render Markdown or JSON report with next actions
+```
+
+Diagnostics are informational. They do not collect evidence, call providers, run Codex, launch Playwright, apply migrations, or repair local data.
 
 ## 6. Database Architecture
 
@@ -973,6 +1018,9 @@ Environment variables:
 ```text
 FETCH_TRENDS_DB_PATH
 FETCH_TRENDS_RESULTS_DIR
+FETCH_TRENDS_ARTIFACTS_DIR
+FETCH_TRENDS_BACKUP_DIR
+FETCH_TRENDS_EXPORT_DIR
 SERP_API_KEY
 DATAFORSEO_LOGIN
 DATAFORSEO_PASSWORD
@@ -987,6 +1035,7 @@ Current implementation note:
 - Reddit, YouTube, and review discovery currently reuse the configured SERP provider instead of calling direct platform APIs.
 - Competitor collection fetches candidate pages directly after SERP discovery.
 - Missing provider configuration must degrade to warnings and blocked tool runs rather than failing the whole validation job.
+- `npm run diagnose` reads these settings safely and reports secret variables only as configured or missing.
 
 The system should run in a reduced local mode without external API keys.
 
@@ -1008,6 +1057,7 @@ Test layers:
 | Orchestrator | Integration tests using fake utilities and fake AI runner. |
 | AI output parsing | Golden JSON and malformed-output tests. |
 | CLI | Command-level tests for options and output files. |
+| Diagnostics | Temp SQLite, temp directories, mocked env, and no live service calls. |
 | Web | Route tests after UI exists. |
 
 Rules:
