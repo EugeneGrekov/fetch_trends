@@ -72,12 +72,21 @@ src/
     worker.ts
     measurement.ts
     decide.ts
+    revalidate.ts
 
   decision-loop/
     decision-engine.ts
     learning-history.ts
     next-experiment.ts
     pivot-generator.ts
+    types.ts
+
+  revalidation/
+    stale-evidence.ts
+    scheduler.ts
+    queue.ts
+    revalidation-runner.ts
+    revalidation-report.ts
     types.ts
 
   utilities/
@@ -200,6 +209,7 @@ Commands:
 | `seo-plan` | Generate an evidence-backed SEO page plan from stored queries and evidence. |
 | `measurement` | Import local experiment events, evaluate thresholds, and persist measurement reports. |
 | `decide` | Turn stored validation and measurement evidence into one decision memo and next action. |
+| `revalidate` | Scan for stale evidence, queue local revalidation tasks, run pending tasks, and persist refreshed score/report snapshots. |
 | `db` | Migration and database inspection tasks. |
 | `web` | Start local web interface. |
 | `worker` | Run queued validation jobs. |
@@ -361,6 +371,26 @@ They should not:
 - Be required by the web UI.
 - Become the only way to run validation.
 
+### 4.9 Scheduled Revalidation
+
+Scheduled revalidation is the local maintenance layer for validation evidence.
+
+Responsibilities:
+
+- Evaluate evidence age by source family.
+- Queue explicit refresh tasks instead of silently changing evidence.
+- Run pending queue items through injectable collector/service boundaries.
+- Append refreshed evidence, scores, and reports as new rows.
+- Mark unavailable collectors as blocked or skipped rather than crashing.
+- Generate a revalidation report that separates stale evidence, refreshed evidence, blocked tasks, score changes, and next action.
+
+Rules:
+
+- Historical evidence is never overwritten.
+- Measurement events and decisions are historical facts. They are not automatically stale, though later snapshots can supersede earlier interpretations.
+- Revalidation is local and explicit. There is no daemon or cloud scheduler in the first implementation.
+- Portfolio refresh is represented as a queue task marker until portfolio ranking exists in code.
+
 ## 5. Data Flow
 
 ### 5.1 Autocomplete-Only Flow
@@ -437,6 +467,21 @@ Stored payment-test report
 
 Measurement is local-first. It does not call analytics providers, payment processors, Search Console, Google Analytics, or email systems.
 
+### 5.6 Scheduled Revalidation Flow
+
+```text
+CLI scan
+  -> load idea evidence snapshots
+  -> evaluate source/evidence age rules
+  -> create revalidation_queue rows
+  -> CLI run-pending
+  -> run available refresh services or mark tasks blocked/skipped
+  -> append new evidence rows
+  -> append new score snapshot
+  -> append revalidation report
+  -> preserve historical evidence and reports
+```
+
 ## 6. Database Architecture
 
 ### 6.1 Tables
@@ -459,6 +504,9 @@ Initial tables:
 | `experiment_events` | Raw behavior events imported manually or from local files. |
 | `measurement_snapshots` | Aggregate metric and threshold-evaluation snapshots. |
 | `experiment_decisions` | Decision snapshots linked to measurement reports. |
+| `revalidation_rules` | Default local freshness windows and recommended task mappings. |
+| `revalidation_queue` | Explicit local queue of stale-evidence refresh tasks. |
+| `revalidation_runs` | Scan and run-pending lifecycle records with JSON summaries. |
 
 ### 6.2 Logical Schema
 
@@ -611,6 +659,39 @@ experiment_decisions
 - reason
 - report_id
 - created_at
+
+revalidation_rules
+- id
+- evidence_type
+- stale_after_days
+- task_type
+- enabled
+- created_at
+- updated_at
+
+revalidation_queue
+- id
+- idea_id
+- task_type
+- status
+- reason
+- stale_reason_json
+- run_id
+- created_at
+- updated_at
+- started_at
+- completed_at
+- error_message
+
+revalidation_runs
+- id
+- idea_id
+- mode
+- status
+- started_at
+- completed_at
+- summary_json
+- error_message
 ```
 
 ### 6.3 Persistence Rules
@@ -626,6 +707,10 @@ experiment_decisions
 - Measurement reports use `report_type = measurement_report`.
 - Measurement decisions are snapshots. Re-evaluating an experiment creates new snapshot, report, and decision rows rather than overwriting prior decisions.
 - Raw experiment events are stored before metrics or recommendations are generated.
+- Revalidation queue and run rows are lifecycle records. Evidence refreshes append new evidence/source/competitor/prediction rows.
+- Revalidation scores use `score_type = revalidation_search_language`.
+- Revalidation reports use `report_type = revalidation_report`.
+- Blocked or skipped revalidation tasks are stored as queue statuses and do not delete stale evidence.
 
 ## 7. Validation Contracts
 

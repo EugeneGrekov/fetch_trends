@@ -10,6 +10,7 @@ import {
   listAppliedMigrations,
   PIVOT_PERSEVERE_LOOP_MIGRATION_ID,
   POST_LAUNCH_MEASUREMENT_MIGRATION_ID,
+  SCHEDULED_REVALIDATION_MIGRATION_ID,
 } from './migrations.js';
 
 const tempDirs: string[] = [];
@@ -26,11 +27,12 @@ describe('database migrations', () => {
 
     try {
       const applied = applyMigrations(db);
-      expect(applied.slice(0, 4)).toEqual([
+      expect(applied.slice(0, 5)).toEqual([
         INITIAL_MIGRATION_ID,
         EXTERNAL_EVIDENCE_MIGRATION_ID,
         POST_LAUNCH_MEASUREMENT_MIGRATION_ID,
         PIVOT_PERSEVERE_LOOP_MIGRATION_ID,
+        SCHEDULED_REVALIDATION_MIGRATION_ID,
       ]);
       expect(applyMigrations(db)).toEqual([]);
 
@@ -54,6 +56,9 @@ describe('database migrations', () => {
           'jobs',
           'measurement_snapshots',
           'queries',
+          'revalidation_queue',
+          'revalidation_rules',
+          'revalidation_runs',
           'reports',
           'schema_migrations',
           'scores',
@@ -66,6 +71,7 @@ describe('database migrations', () => {
         expect.objectContaining({ id: EXTERNAL_EVIDENCE_MIGRATION_ID }),
         expect.objectContaining({ id: POST_LAUNCH_MEASUREMENT_MIGRATION_ID }),
         expect.objectContaining({ id: PIVOT_PERSEVERE_LOOP_MIGRATION_ID }),
+        expect.objectContaining({ id: SCHEDULED_REVALIDATION_MIGRATION_ID }),
       ]));
     } finally {
       db.close();

@@ -5,6 +5,7 @@ export const INITIAL_MIGRATION_ID = '001_initial_validation_tables';
 export const EXTERNAL_EVIDENCE_MIGRATION_ID = '002_external_evidence_tables';
 export const POST_LAUNCH_MEASUREMENT_MIGRATION_ID = '003_post_launch_measurement_tables';
 export const PIVOT_PERSEVERE_LOOP_MIGRATION_ID = '004_pivot_persevere_loop_tables';
+export const SCHEDULED_REVALIDATION_MIGRATION_ID = '005_scheduled_revalidation_tables';
 
 interface MigrationDefinition {
   id: string;
@@ -252,6 +253,73 @@ const MIGRATIONS: MigrationDefinition[] = [
       CREATE INDEX idx_idea_decisions_idea_id ON idea_decisions (idea_id);
       CREATE INDEX idx_idea_decisions_experiment_id ON idea_decisions (experiment_id);
       CREATE INDEX idx_idea_decisions_report_id ON idea_decisions (report_id);
+    `,
+  },
+  {
+    id: SCHEDULED_REVALIDATION_MIGRATION_ID,
+    sql: `
+      CREATE TABLE revalidation_rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evidence_type TEXT NOT NULL UNIQUE,
+        stale_after_days INTEGER,
+        task_type TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE revalidation_runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER,
+        mode TEXT NOT NULL,
+        status TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        completed_at TEXT,
+        summary_json TEXT,
+        error_message TEXT,
+        FOREIGN KEY (idea_id) REFERENCES ideas(id)
+      );
+
+      CREATE TABLE revalidation_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        task_type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        stale_reason_json TEXT,
+        run_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        started_at TEXT,
+        completed_at TEXT,
+        error_message TEXT,
+        FOREIGN KEY (idea_id) REFERENCES ideas(id),
+        FOREIGN KEY (run_id) REFERENCES revalidation_runs(id)
+      );
+
+      INSERT INTO revalidation_rules (
+        evidence_type,
+        stale_after_days,
+        task_type,
+        enabled,
+        created_at,
+        updated_at
+      ) VALUES
+        ('autocomplete_prediction', 90, 'refresh_autocomplete', 1, datetime('now'), datetime('now')),
+        ('serp_result', 30, 'refresh_serp', 1, datetime('now'), datetime('now')),
+        ('competitor_pricing', 30, 'refresh_competitors', 1, datetime('now'), datetime('now')),
+        ('reviews_complaints', 90, 'refresh_reviews', 1, datetime('now'), datetime('now')),
+        ('measurement_event', NULL, 'refresh_measurement', 1, datetime('now'), datetime('now')),
+        ('score_snapshot', NULL, 'refresh_score', 1, datetime('now'), datetime('now')),
+        ('report_snapshot', NULL, 'refresh_report', 1, datetime('now'), datetime('now')),
+        ('portfolio_snapshot', NULL, 'refresh_portfolio', 1, datetime('now'), datetime('now'));
+
+      CREATE INDEX idx_revalidation_runs_idea_id ON revalidation_runs (idea_id);
+      CREATE INDEX idx_revalidation_runs_status ON revalidation_runs (status);
+      CREATE INDEX idx_revalidation_queue_idea_id ON revalidation_queue (idea_id);
+      CREATE INDEX idx_revalidation_queue_status ON revalidation_queue (status);
+      CREATE INDEX idx_revalidation_queue_task_type ON revalidation_queue (task_type);
+      CREATE INDEX idx_revalidation_queue_run_id ON revalidation_queue (run_id);
     `,
   },
 ];

@@ -174,6 +174,42 @@ export interface IdeaDecisionRow {
   created_at: string;
 }
 
+export interface RevalidationRuleRow {
+  id: number;
+  evidence_type: string;
+  stale_after_days: number | null;
+  task_type: string;
+  enabled: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RevalidationQueueRow {
+  id: number;
+  idea_id: number;
+  task_type: string;
+  status: string;
+  reason: string;
+  stale_reason_json: string | null;
+  run_id: number | null;
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+}
+
+export interface RevalidationRunRow {
+  id: number;
+  idea_id: number | null;
+  mode: string;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  summary_json: string | null;
+  error_message: string | null;
+}
+
 export interface CreateIdeaInput {
   title: string;
   rawDescription: string;
@@ -337,4 +373,19 @@ export interface CreateIdeaDecisionInput {
   evidenceJson: string;
   nextAction: string;
   createdAt: string;
+}
+
+export interface CreateRevalidationQueueInput {
+  ideaId: number;
+  taskType: string;
+  reason: string;
+  staleReasonJson?: string | null;
+  createdAt: string;
+}
+
+export interface CreateRevalidationRunInput {
+  ideaId?: number | null;
+  mode: string;
+  status: string;
+  startedAt: string;
 }

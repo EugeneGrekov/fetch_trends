@@ -10,6 +10,7 @@
     "fetch-trends-decide": "./dist/src/decide.js",
     "fetch-trends-measurement": "./dist/src/measurement.js",
     "fetch-trends-payment-test": "./dist/src/payment-test.js",
+    "fetch-trends-revalidate": "./dist/src/revalidate.js",
     "fetch-trends-seo-plan": "./dist/src/seo-plan.js",
     "fetch-trends-validate": "./dist/src/validate.js"
   },
@@ -22,6 +23,7 @@
     "measurement": "tsx src/measurement.ts",
     "payment-test": "tsx src/payment-test.ts",
     "report": "tsx src/report.ts",
+    "revalidate": "tsx src/revalidate.ts",
     "seo-plan": "tsx src/seo-plan.ts",
     "test": "vitest --run",
     "test:watch": "vitest",
