@@ -5,11 +5,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { openDatabase } from '../connection.js';
 import { applyMigrations } from '../migrations.js';
 import { createAutocompletePredictions, listAutocompletePredictionsByIdea } from './autocomplete-predictions.js';
+import { createCompetitors, listCompetitorsByIdea } from './competitors.js';
+import { createEvidence, listEvidenceByIdea, listEvidenceBySource } from './evidence.js';
 import { createIdea, getIdeaById } from './ideas.js';
 import { completeJob, createJob } from './jobs.js';
 import { createQueries, listQueriesByIdea } from './queries.js';
 import { createReport, listReportsByIdea, listReportsByJob } from './reports.js';
 import { createScore, listScoresByIdea } from './scores.js';
+import { createSources, listSourcesByIdea } from './sources.js';
 import { completeToolRun, createToolRun } from './tool-runs.js';
 
 const tempDirs: string[] = [];
@@ -73,6 +76,44 @@ describe('database repositories', () => {
           createdAt: '2026-07-07T10:01:00.000Z',
         },
       ]);
+      const sources = createSources(db, [
+        {
+          ideaId: idea.id,
+          url: 'https://www.reddit.com/r/androidapps/comments/example/',
+          sourceType: 'reddit_thread',
+          title: 'App keeps losing parked location',
+          snippet: 'The app loses my parked location unless I open it first.',
+          fetchedAt: '2026-07-07T10:01:30.000Z',
+        },
+      ]);
+      createEvidence(db, [
+        {
+          ideaId: idea.id,
+          sourceId: sources[0]?.id ?? 0,
+          quote: 'The app loses my parked location unless I open it first.',
+          painType: 'reliability',
+          complaint: 'location is lost',
+          workaround: 'open it first',
+          urgency: 'medium',
+          paymentSignal: 'weak',
+          confidenceScore: 72,
+          createdAt: '2026-07-07T10:01:45.000Z',
+        },
+      ]);
+      createCompetitors(db, [
+        {
+          ideaId: idea.id,
+          name: 'Example Parking Tool',
+          url: 'https://example.com/parking-tool',
+          productType: 'direct_competitor',
+          priceText: '$29 one-time',
+          pricingModel: 'one-time',
+          strengthsJson: '["Clear positioning"]',
+          weaknessesJson: '[]',
+          reviewSummary: 'Users mention setup friction.',
+          createdAt: '2026-07-07T10:02:00.000Z',
+        },
+      ]);
       const score = createScore(db, {
         ideaId: idea.id,
         scoreType: 'search-language',
@@ -98,6 +139,12 @@ describe('database repositories', () => {
       expect(completedToolRun.status).toBe('completed');
       expect(listQueriesByIdea(db, idea.id)).toHaveLength(1);
       expect(listAutocompletePredictionsByIdea(db, idea.id)).toHaveLength(1);
+      expect(listSourcesByIdea(db, idea.id)).toHaveLength(1);
+      expect(listEvidenceByIdea(db, idea.id)).toHaveLength(1);
+      expect(listEvidenceBySource(db, sources[0]?.id ?? 0)).toHaveLength(1);
+      expect(listCompetitorsByIdea(db, idea.id)).toEqual([
+        expect.objectContaining({ name: 'Example Parking Tool' }),
+      ]);
       expect(listScoresByIdea(db, idea.id)).toEqual([
         expect.objectContaining({ id: score.id, total_score: 72 }),
       ]);

@@ -81,6 +81,45 @@ export interface ReportRow {
   created_at: string;
 }
 
+export interface SourceRow {
+  id: number;
+  idea_id: number;
+  url: string;
+  source_type: string;
+  title: string | null;
+  snippet: string | null;
+  fetched_at: string;
+}
+
+export interface EvidenceRow {
+  id: number;
+  idea_id: number;
+  source_id: number;
+  quote: string;
+  pain_type: string | null;
+  trigger: string | null;
+  workaround: string | null;
+  complaint: string | null;
+  urgency: string | null;
+  payment_signal: string | null;
+  confidence_score: number | null;
+  created_at: string;
+}
+
+export interface CompetitorRow {
+  id: number;
+  idea_id: number;
+  name: string;
+  url: string;
+  product_type: string | null;
+  price_text: string | null;
+  pricing_model: string | null;
+  strengths_json: string | null;
+  weaknesses_json: string | null;
+  review_summary: string | null;
+  created_at: string;
+}
+
 export interface CreateIdeaInput {
   title: string;
   rawDescription: string;
@@ -158,5 +197,41 @@ export interface CreateReportInput {
   reportType: string;
   markdown: string;
   json?: string | null;
+  createdAt: string;
+}
+
+export interface CreateSourceInput {
+  ideaId: number;
+  url: string;
+  sourceType: string;
+  title?: string | null;
+  snippet?: string | null;
+  fetchedAt: string;
+}
+
+export interface CreateEvidenceInput {
+  ideaId: number;
+  sourceId: number;
+  quote: string;
+  painType?: string | null;
+  trigger?: string | null;
+  workaround?: string | null;
+  complaint?: string | null;
+  urgency?: string | null;
+  paymentSignal?: string | null;
+  confidenceScore?: number | null;
+  createdAt: string;
+}
+
+export interface CreateCompetitorInput {
+  ideaId: number;
+  name: string;
+  url: string;
+  productType?: string | null;
+  priceText?: string | null;
+  pricingModel?: string | null;
+  strengthsJson?: string | null;
+  weaknessesJson?: string | null;
+  reviewSummary?: string | null;
   createdAt: string;
 }

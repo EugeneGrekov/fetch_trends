@@ -3,7 +3,12 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 import { openDatabase } from './connection.js';
-import { applyMigrations, INITIAL_MIGRATION_ID, listAppliedMigrations } from './migrations.js';
+import {
+  applyMigrations,
+  EXTERNAL_EVIDENCE_MIGRATION_ID,
+  INITIAL_MIGRATION_ID,
+  listAppliedMigrations,
+} from './migrations.js';
 
 const tempDirs: string[] = [];
 
@@ -18,7 +23,10 @@ describe('database migrations', () => {
     const { db } = await openDatabase(join(dir, 'foundation.sqlite'));
 
     try {
-      expect(applyMigrations(db)).toEqual([INITIAL_MIGRATION_ID]);
+      expect(applyMigrations(db)).toEqual([
+        INITIAL_MIGRATION_ID,
+        EXTERNAL_EVIDENCE_MIGRATION_ID,
+      ]);
       expect(applyMigrations(db)).toEqual([]);
 
       const tables = db.prepare(`
@@ -31,17 +39,21 @@ describe('database migrations', () => {
       expect(tables.map((table) => table.name)).toEqual(
         expect.arrayContaining([
           'autocomplete_predictions',
+          'competitors',
+          'evidence',
           'ideas',
           'jobs',
           'queries',
           'reports',
           'schema_migrations',
           'scores',
+          'sources',
           'tool_runs',
         ]),
       );
       expect(listAppliedMigrations(db)).toEqual([
         expect.objectContaining({ id: INITIAL_MIGRATION_ID }),
+        expect.objectContaining({ id: EXTERNAL_EVIDENCE_MIGRATION_ID }),
       ]);
     } finally {
       db.close();

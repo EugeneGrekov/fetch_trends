@@ -5,7 +5,9 @@
   "description": "Local Google Autocomplete research CLI for validating search language around micro-business ideas.",
   "type": "module",
   "bin": {
-    "fetch-trends-autocomplete": "./dist/src/cli.js"
+    "fetch-trends-autocomplete": "./dist/src/cli.js",
+    "fetch-trends-db": "./dist/src/db.js",
+    "fetch-trends-validate": "./dist/src/validate.js"
   },
   "scripts": {
     "autocomplete": "tsx src/cli.ts",

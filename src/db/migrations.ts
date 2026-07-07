@@ -2,6 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { expectRows } from './results.js';
 
 export const INITIAL_MIGRATION_ID = '001_initial_validation_tables';
+export const EXTERNAL_EVIDENCE_MIGRATION_ID = '002_external_evidence_tables';
 
 interface MigrationDefinition {
   id: string;
@@ -113,6 +114,59 @@ const MIGRATIONS: MigrationDefinition[] = [
       CREATE INDEX idx_scores_idea_id ON scores (idea_id);
       CREATE INDEX idx_reports_idea_id ON reports (idea_id);
       CREATE INDEX idx_reports_job_id ON reports (job_id);
+    `,
+  },
+  {
+    id: EXTERNAL_EVIDENCE_MIGRATION_ID,
+    sql: `
+      CREATE TABLE sources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        url TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        title TEXT,
+        snippet TEXT,
+        fetched_at TEXT NOT NULL,
+        FOREIGN KEY (idea_id) REFERENCES ideas(id)
+      );
+
+      CREATE TABLE evidence (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        source_id INTEGER NOT NULL,
+        quote TEXT NOT NULL,
+        pain_type TEXT,
+        trigger TEXT,
+        workaround TEXT,
+        complaint TEXT,
+        urgency TEXT,
+        payment_signal TEXT,
+        confidence_score INTEGER,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (idea_id) REFERENCES ideas(id),
+        FOREIGN KEY (source_id) REFERENCES sources(id)
+      );
+
+      CREATE TABLE competitors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        product_type TEXT,
+        price_text TEXT,
+        pricing_model TEXT,
+        strengths_json TEXT,
+        weaknesses_json TEXT,
+        review_summary TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (idea_id) REFERENCES ideas(id)
+      );
+
+      CREATE INDEX idx_sources_idea_id ON sources (idea_id);
+      CREATE INDEX idx_sources_source_type ON sources (source_type);
+      CREATE INDEX idx_evidence_idea_id ON evidence (idea_id);
+      CREATE INDEX idx_evidence_source_id ON evidence (source_id);
+      CREATE INDEX idx_competitors_idea_id ON competitors (idea_id);
     `,
   },
 ];
