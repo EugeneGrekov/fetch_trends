@@ -68,6 +68,18 @@ Manual browser-assisted mode:
 npm run autocomplete -- --seed "find my parked car" --headless false --out ./results/parking.csv
 ```
 
+Prepare the local SQLite database:
+
+```bash
+npm run db -- --migrate
+```
+
+Run the first persisted validation flow:
+
+```bash
+npm run validate -- --idea "automatic app that saves parking location when Bluetooth disconnects"
+```
+
 ## Inputs
 
 - `--seed <phrase>` can be passed multiple times.
@@ -89,6 +101,15 @@ npm run autocomplete -- --seed "find my parked car" --headless false --out ./res
 - `--resume` defaults to `true`.
 
 Custom modifiers replace the default modifier list.
+
+## SQLite Validation
+
+- Default DB path: `./data/fetch-trends.sqlite`
+- Environment override: `FETCH_TRENDS_DB_PATH`
+- `npm run db -- --migrate` creates the schema and applies pending migrations.
+- `npm run validate -- --idea "..."`
+  stores ideas, jobs, tool runs, queries, autocomplete predictions, scores, and reports.
+- `validate` keeps the existing autocomplete CSV/JSON export behavior by writing artifacts under `./results/validate/`.
 
 ## Default Modifiers
 

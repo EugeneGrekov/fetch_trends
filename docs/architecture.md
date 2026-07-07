@@ -171,7 +171,7 @@ Commands:
 |---|---|
 | `autocomplete` | Existing Google Autocomplete research utility. |
 | `validate` | Full validation job from idea to report. |
-| `report` | Regenerate or export reports from stored evidence. |
+| `report` | Read or export the latest stored report by idea ID or job ID. |
 | `db` | Migration and database inspection tasks. |
 | `web` | Start local web interface. |
 | `worker` | Run queued validation jobs. |
@@ -295,6 +295,7 @@ They should:
 - Run stable CLI commands.
 - Read generated reports or SQLite-backed artifacts.
 - Summarize evidence for the user.
+- Stay above the CLI and orchestrator rather than becoming core validation logic.
 
 They should not:
 

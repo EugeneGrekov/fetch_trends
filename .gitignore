@@ -23,6 +23,8 @@ dist-ssr
 deno.lock
 tmp/
 results/
+*.sqlite
+*.sqlite-*
 *.resume.json
 runs/
 underfined/
