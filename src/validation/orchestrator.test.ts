@@ -1,4 +1,4 @@
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -9,6 +9,7 @@ import { listQueriesByIdea } from '../db/repositories/queries.js';
 import { listReportsByIdea } from '../db/repositories/reports.js';
 import { listScoresByIdea } from '../db/repositories/scores.js';
 import { getToolRunById } from '../db/repositories/tool-runs.js';
+import type { AiExecutionRequest, AiExecutionResult, AiExecutor } from '../ai/types.js';
 import type { AutocompleteCollector, CollectContext } from '../utilities/autocomplete/types.js';
 import { runValidationJob } from './orchestrator.js';
 
@@ -27,6 +28,7 @@ describe('validation orchestrator', () => {
 
     const result = await runValidationJob(
       {
+        ai: false,
         idea: 'automatic app that saves parking location when bluetooth disconnects',
         dbPath,
         outDir,
@@ -36,6 +38,7 @@ describe('validation orchestrator', () => {
         modifiers: ['automatic', 'app'],
         headless: true,
         delayMs: 0,
+        keepAiArtifacts: false,
         maxPrefixes: 2,
         maxDepth2Prefixes: 2,
       },
@@ -76,7 +79,71 @@ describe('validation orchestrator', () => {
     };
     expect(summaryJson.finalSummary.uniquePredictionCount).toBeGreaterThan(0);
   });
+
+  it('falls back to deterministic reporting when AI output is invalid', async () => {
+    const dir = await createTempDir();
+    const dbPath = join(dir, 'validation.sqlite');
+    const result = await runValidationJob(
+      {
+        ai: true,
+        aiArtifactsDir: join(dir, 'artifacts'),
+        aiModel: 'test-model',
+        aiReasoning: 'medium',
+        country: 'US',
+        dbPath,
+        delayMs: 0,
+        depth: 1,
+        headless: true,
+        idea: 'automatic app that saves parking location when bluetooth disconnects',
+        keepAiArtifacts: true,
+        language: 'en',
+        maxDepth2Prefixes: 1,
+        maxPrefixes: 1,
+        modifiers: [],
+        outDir: join(dir, 'results'),
+      },
+      {
+        aiExecutor: new InvalidJsonExecutor(),
+        createCollector: () => new FakeCollector(),
+      },
+    );
+
+    const { db } = await openDatabase(dbPath);
+    try {
+      const toolRuns = db.prepare('SELECT tool_name, status FROM tool_runs ORDER BY id').all() as Array<{
+        status: string;
+        tool_name: string;
+      }>;
+
+      expect(result.report.markdown).toContain('## Facts');
+      expect(result.ai.used).toBe(false);
+      expect(result.ai.warnings.length).toBeGreaterThan(0);
+      expect(toolRuns).toEqual([
+        expect.objectContaining({ tool_name: 'ai.idea_normalize', status: 'failed' }),
+        expect.objectContaining({ tool_name: 'ai.query_generate', status: 'failed' }),
+        expect.objectContaining({ tool_name: 'autocomplete', status: 'completed' }),
+        expect.objectContaining({ tool_name: 'ai.evidence_summarize', status: 'failed' }),
+        expect.objectContaining({ tool_name: 'ai.final_report', status: 'failed' }),
+      ]);
+    } finally {
+      db.close();
+    }
+  });
 });
+
+class InvalidJsonExecutor implements AiExecutor {
+  async execute(request: AiExecutionRequest): Promise<AiExecutionResult> {
+    await writeFile(request.outputPath, 'definitely not json');
+    return {
+      command: ['fake-codex'],
+      durationMs: 5,
+      exitCode: 0,
+      outputPath: request.outputPath,
+      stderr: '',
+      stdout: 'definitely not json',
+    };
+  }
+}
 
 class FakeCollector implements AutocompleteCollector {
   async collect(prefix: string, _context: CollectContext): Promise<string[]> {

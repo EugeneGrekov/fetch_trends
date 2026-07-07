@@ -22,6 +22,7 @@ dist-ssr
 .env*
 deno.lock
 tmp/
+artifacts/
 results/
 *.sqlite
 *.sqlite-*
