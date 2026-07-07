@@ -71,6 +71,14 @@ src/
     web.ts
     worker.ts
     measurement.ts
+    decide.ts
+
+  decision-loop/
+    decision-engine.ts
+    learning-history.ts
+    next-experiment.ts
+    pivot-generator.ts
+    types.ts
 
   utilities/
     autocomplete/
@@ -101,11 +109,19 @@ src/
       collector.ts
       types.ts
 
+    reviews/
+      collector.ts
+      types.ts
+
   validation/
     orchestrator.ts
     idea-normalizer.ts
     query-generator.ts
     evidence-extractor.ts
+    external-evidence.ts
+    source-normalizer.ts
+    complaint-extractor.ts
+    competitor-analyzer.ts
     scoring.ts
     report-generator.ts
     types.ts
@@ -183,6 +199,7 @@ Commands:
 | `payment-test` | Generate a payment-intent test spec from stored validation evidence. |
 | `seo-plan` | Generate an evidence-backed SEO page plan from stored queries and evidence. |
 | `measurement` | Import local experiment events, evaluate thresholds, and persist measurement reports. |
+| `decide` | Turn stored validation and measurement evidence into one decision memo and next action. |
 | `db` | Migration and database inspection tasks. |
 | `web` | Start local web interface. |
 | `worker` | Run queued validation jobs. |
@@ -305,7 +322,27 @@ Current implementation:
 - Routes render server-side HTML and expose small JSON APIs for polling.
 - Report export reads stored `reports` rows as markdown or JSON.
 
-### 4.7 Codex Skills
+### 4.7 Decision Loop
+
+The decision loop is the idea-level operating layer over validation and measurement records.
+
+Responsibilities:
+
+- Load the current idea, latest experiment, measurement snapshot, validation reports, scores, evidence, and prior decisions.
+- Apply deterministic rules before any narrative drafting.
+- Return one of `build_mvp`, `persevere`, `pivot`, `validate_deeper`, `kill`, or `inconclusive`.
+- Generate a learning history so repeated tests and decisions remain visible.
+- Generate pivot options only when stored evidence supports a pivot.
+- Generate exactly one next action.
+- Persist a `decision_memo` report and an `idea_decisions` ledger row.
+
+Rules:
+
+- Low sample size or missing behavior data is `inconclusive`.
+- The decision loop does not collect new evidence, process payments, or compare a portfolio of ideas.
+- AI may draft narrative later, but deterministic decision values remain the source of truth.
+
+### 4.8 Codex Skills
 
 Codex skills are agent-facing wrappers around local tools.
 
@@ -858,6 +895,13 @@ YOUTUBE_API_KEY
 REDDIT_CLIENT_ID
 REDDIT_CLIENT_SECRET
 ```
+
+Current implementation note:
+
+- The first live external provider path is `SERP_API_KEY` via SerpApi.
+- Reddit, YouTube, and review discovery currently reuse the configured SERP provider instead of calling direct platform APIs.
+- Competitor collection fetches candidate pages directly after SERP discovery.
+- Missing provider configuration must degrade to warnings and blocked tool runs rather than failing the whole validation job.
 
 The system should run in a reduced local mode without external API keys.
 

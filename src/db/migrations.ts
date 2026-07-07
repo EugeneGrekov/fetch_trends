@@ -4,6 +4,7 @@ import { expectRows } from './results.js';
 export const INITIAL_MIGRATION_ID = '001_initial_validation_tables';
 export const EXTERNAL_EVIDENCE_MIGRATION_ID = '002_external_evidence_tables';
 export const POST_LAUNCH_MEASUREMENT_MIGRATION_ID = '003_post_launch_measurement_tables';
+export const PIVOT_PERSEVERE_LOOP_MIGRATION_ID = '004_pivot_persevere_loop_tables';
 
 interface MigrationDefinition {
   id: string;
@@ -227,6 +228,30 @@ const MIGRATIONS: MigrationDefinition[] = [
       CREATE INDEX idx_measurement_snapshots_experiment_id ON measurement_snapshots (experiment_id);
       CREATE INDEX idx_experiment_decisions_experiment_id ON experiment_decisions (experiment_id);
       CREATE INDEX idx_experiment_decisions_report_id ON experiment_decisions (report_id);
+    `,
+  },
+  {
+    id: PIVOT_PERSEVERE_LOOP_MIGRATION_ID,
+    sql: `
+      CREATE TABLE idea_decisions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        experiment_id INTEGER,
+        report_id INTEGER,
+        decision TEXT NOT NULL,
+        confidence TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        evidence_json TEXT NOT NULL,
+        next_action TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (idea_id) REFERENCES ideas(id),
+        FOREIGN KEY (experiment_id) REFERENCES experiments(id),
+        FOREIGN KEY (report_id) REFERENCES reports(id)
+      );
+
+      CREATE INDEX idx_idea_decisions_idea_id ON idea_decisions (idea_id);
+      CREATE INDEX idx_idea_decisions_experiment_id ON idea_decisions (experiment_id);
+      CREATE INDEX idx_idea_decisions_report_id ON idea_decisions (report_id);
     `,
   },
 ];

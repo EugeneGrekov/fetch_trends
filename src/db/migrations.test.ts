@@ -8,6 +8,7 @@ import {
   EXTERNAL_EVIDENCE_MIGRATION_ID,
   INITIAL_MIGRATION_ID,
   listAppliedMigrations,
+  PIVOT_PERSEVERE_LOOP_MIGRATION_ID,
   POST_LAUNCH_MEASUREMENT_MIGRATION_ID,
 } from './migrations.js';
 
@@ -25,10 +26,11 @@ describe('database migrations', () => {
 
     try {
       const applied = applyMigrations(db);
-      expect(applied.slice(0, 3)).toEqual([
+      expect(applied.slice(0, 4)).toEqual([
         INITIAL_MIGRATION_ID,
         EXTERNAL_EVIDENCE_MIGRATION_ID,
         POST_LAUNCH_MEASUREMENT_MIGRATION_ID,
+        PIVOT_PERSEVERE_LOOP_MIGRATION_ID,
       ]);
       expect(applyMigrations(db)).toEqual([]);
 
@@ -47,6 +49,7 @@ describe('database migrations', () => {
           'experiment_decisions',
           'experiment_events',
           'experiments',
+          'idea_decisions',
           'ideas',
           'jobs',
           'measurement_snapshots',
@@ -62,6 +65,7 @@ describe('database migrations', () => {
         expect.objectContaining({ id: INITIAL_MIGRATION_ID }),
         expect.objectContaining({ id: EXTERNAL_EVIDENCE_MIGRATION_ID }),
         expect.objectContaining({ id: POST_LAUNCH_MEASUREMENT_MIGRATION_ID }),
+        expect.objectContaining({ id: PIVOT_PERSEVERE_LOOP_MIGRATION_ID }),
       ]));
     } finally {
       db.close();

@@ -7,6 +7,7 @@
   "bin": {
     "fetch-trends-autocomplete": "./dist/src/cli.js",
     "fetch-trends-db": "./dist/src/db.js",
+    "fetch-trends-decide": "./dist/src/decide.js",
     "fetch-trends-measurement": "./dist/src/measurement.js",
     "fetch-trends-payment-test": "./dist/src/payment-test.js",
     "fetch-trends-seo-plan": "./dist/src/seo-plan.js",
@@ -16,6 +17,7 @@
     "autocomplete": "tsx src/cli.ts",
     "db": "tsx src/db.ts",
     "build": "tsc -p tsconfig.json",
+    "decide": "tsx src/decide.ts",
     "lint": "eslint .",
     "measurement": "tsx src/measurement.ts",
     "payment-test": "tsx src/payment-test.ts",

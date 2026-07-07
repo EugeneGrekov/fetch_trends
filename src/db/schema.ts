@@ -161,6 +161,19 @@ export interface ExperimentDecisionRow {
   created_at: string;
 }
 
+export interface IdeaDecisionRow {
+  id: number;
+  idea_id: number;
+  experiment_id: number | null;
+  report_id: number | null;
+  decision: string;
+  confidence: string;
+  reason: string;
+  evidence_json: string;
+  next_action: string;
+  created_at: string;
+}
+
 export interface CreateIdeaInput {
   title: string;
   rawDescription: string;
@@ -311,5 +324,17 @@ export interface CreateExperimentDecisionInput {
   decision: string;
   reason: string;
   reportId?: number | null;
+  createdAt: string;
+}
+
+export interface CreateIdeaDecisionInput {
+  ideaId: number;
+  experimentId?: number | null;
+  reportId?: number | null;
+  decision: string;
+  confidence: string;
+  reason: string;
+  evidenceJson: string;
+  nextAction: string;
   createdAt: string;
 }
