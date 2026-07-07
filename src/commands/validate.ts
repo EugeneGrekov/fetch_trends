@@ -26,6 +26,12 @@ program
   .option('--delayMs <ms>', 'base random delay between prefixes', parseNonNegativeInteger, 1200)
   .option('--maxPrefixes <count>', 'maximum depth-1 prefixes per seed', parsePositiveInteger, 500)
   .option('--maxDepth2Prefixes <count>', 'maximum depth-2 prefixes per seed', parsePositiveInteger, 100)
+  .option('--external <boolean>', 'enable external evidence collectors: true/false', parseBoolean, false)
+  .option('--serp <boolean>', 'enable SERP collection: true/false', parseBoolean)
+  .option('--reddit <boolean>', 'enable Reddit/forum collection: true/false', parseBoolean)
+  .option('--youtube <boolean>', 'enable YouTube collection: true/false', parseBoolean)
+  .option('--competitors <boolean>', 'enable competitor page collection: true/false', parseBoolean)
+  .option('--reviews <boolean>', 'enable review-surface collection: true/false', parseBoolean)
   .action(async (rawOptions: {
     ai: boolean;
     aiModel?: string;
@@ -43,6 +49,12 @@ program
     keepAiArtifacts: boolean;
     maxPrefixes: number;
     maxDepth2Prefixes: number;
+    external: boolean;
+    serp?: boolean;
+    reddit?: boolean;
+    youtube?: boolean;
+    competitors?: boolean;
+    reviews?: boolean;
   }) => {
     try {
       const modifiers = rawOptions.modifier.length === 0 && rawOptions.modifiers.length === 0
@@ -65,16 +77,28 @@ program
         keepAiArtifacts: rawOptions.keepAiArtifacts,
         maxPrefixes: rawOptions.maxPrefixes,
         maxDepth2Prefixes: rawOptions.maxDepth2Prefixes,
+        external: rawOptions.external,
+        serp: rawOptions.serp,
+        reddit: rawOptions.reddit,
+        youtube: rawOptions.youtube,
+        competitors: rawOptions.competitors,
+        reviews: rawOptions.reviews,
       });
 
       process.stdout.write(`Validation job ${result.job.id} completed.\n`);
       process.stdout.write(`Database: ${result.dbPath}\n`);
       process.stdout.write(`Autocomplete artifacts: ${result.outputPath}\n`);
       process.stdout.write(`Score: ${result.score.total_score} (${result.score.decision})\n`);
+      process.stdout.write(
+        `External evidence: ${result.external.sources.length} sources, ${result.external.evidence.length} evidence rows, ${result.external.competitors.length} competitors.\n`,
+      );
       process.stdout.write(`Stored report ${result.report.id} for idea ${result.idea.id}.\n`);
       process.stdout.write(`AI used: ${result.ai.used ? 'yes' : 'no'}\n`);
 
       for (const warning of result.ai.warnings) {
+        process.stderr.write(`Warning: ${warning}\n`);
+      }
+      for (const warning of result.external.warnings) {
         process.stderr.write(`Warning: ${warning}\n`);
       }
     } catch (error) {

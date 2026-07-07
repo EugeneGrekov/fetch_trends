@@ -1,0 +1,23 @@
+{
+  "serp": {
+    "enabled": true,
+    "limit": 10,
+    "provider": "serpapi"
+  },
+  "reddit": {
+    "enabled": true,
+    "limit": 10
+  },
+  "youtube": {
+    "enabled": true,
+    "limit": 10
+  },
+  "competitors": {
+    "enabled": true,
+    "maxPages": 5
+  },
+  "reviews": {
+    "enabled": true,
+    "limit": 10
+  }
+}

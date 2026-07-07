@@ -17,6 +17,9 @@ export function extractJsonCandidate(rawOutput: string): string {
   }
 
   if (!trimmed.startsWith('```')) {
+    if (trimmed.includes('```')) {
+      throw new Error('AI output must be raw JSON or a single fenced JSON block.');
+    }
     return trimmed;
   }
 

@@ -1,6 +1,7 @@
 import type { AiExecutor, EvidenceSummaryOutput, FinalReportOutput, IdeaNormalizeOutput, QueryGenerateOutput } from '../ai/types.js';
 import type { AutocompleteCollector, Intent, RunReport, UniquePrediction } from '../utilities/autocomplete/types.js';
 import type { IdeaRow, JobRow, QueryRow, ReportRow, ScoreRow, ToolRunRow } from '../db/schema.js';
+import type { ExternalCollectorDependencies, ExternalEvidenceSummary } from './external-types.js';
 
 export interface NormalizedIdea {
   cleanedIdea: string;
@@ -34,9 +35,15 @@ export interface ValidationOptions {
   maxPrefixes: number;
   maxDepth2Prefixes: number;
   keepAiArtifacts: boolean;
+  external?: boolean;
+  serp?: boolean;
+  reddit?: boolean;
+  youtube?: boolean;
+  competitors?: boolean;
+  reviews?: boolean;
 }
 
-export interface ValidationDependencies {
+export interface ValidationDependencies extends ExternalCollectorDependencies {
   aiExecutor?: AiExecutor;
   createCollector?: (headless: boolean) => AutocompleteCollector;
 }
@@ -77,6 +84,7 @@ export interface ValidationScore {
 export interface ValidationResult {
   ai: ValidationAiSummary;
   dbPath: string;
+  external: ExternalEvidenceSummary;
   outputPath: string;
   idea: IdeaRow;
   job: JobRow;

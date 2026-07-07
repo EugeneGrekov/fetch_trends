@@ -24,6 +24,7 @@ import { PlaywrightAutocompleteCollector } from '../utilities/autocomplete/colle
 import { normalizeQuery } from '../utilities/autocomplete/normalize.js';
 import { runAutocompleteResearch } from '../utilities/autocomplete/runner.js';
 import type { RunOptions, UniquePrediction } from '../utilities/autocomplete/types.js';
+import { collectExternalEvidence } from './external-evidence.js';
 import { normalizeIdea } from './idea-normalizer.js';
 import { generateInitialQueries } from './query-generator.js';
 import { buildDeterministicEvidenceSummary, buildValidationMarkdownReport } from './report-generator.js';
@@ -215,6 +216,17 @@ export async function runValidationJob(
       }),
     );
 
+    const external = await collectExternalEvidence({
+      db,
+      dependencies,
+      idea,
+      jobId: job.id,
+      normalizedIdea: finalIdea,
+      options,
+      predictions: uniquePredictions,
+      queries,
+    });
+
     const scoreModel = buildSearchLanguageScore(uniquePredictions);
     const scoreTimestamp = new Date().toISOString();
     const score = createScore(db, {
@@ -227,6 +239,7 @@ export async function runValidationJob(
     });
 
     aiSummary.evidenceSummary = buildDeterministicEvidenceSummary({
+      external,
       predictions: uniquePredictions,
       queries,
       score: scoreModel,
@@ -322,6 +335,7 @@ export async function runValidationJob(
 
     const markdown = finalReport?.markdown ?? buildValidationMarkdownReport({
       evidenceSummary: aiSummary.evidenceSummary,
+      external,
       idea,
       nextAction: finalReport?.nextAction,
       queries,
@@ -342,6 +356,7 @@ export async function runValidationJob(
           warnings: aiSummary.warnings,
         },
         evidenceSummary: aiSummary.evidenceSummary,
+        external,
         finalReport,
         finalSummary: autocompleteReport.finalSummary,
         score: scoreModel,
@@ -361,6 +376,7 @@ export async function runValidationJob(
     return {
       ai: aiSummary,
       dbPath,
+      external,
       outputPath,
       idea,
       job: completedJob,

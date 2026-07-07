@@ -14,6 +14,7 @@ Search Console, or SEO tools after this step.
 - Classifies intent and platform.
 - Scores signals without estimating volume.
 - Exports CSV, JSON, partial resume data, and per-seed summaries.
+- Can run an evidence-first AI pass that normalizes ideas, proposes bounded queries, summarizes stored evidence, and drafts a report from local artifacts only.
 
 The collector uses delays, a clean browser context, and stops safely if Google
 shows CAPTCHA or anti-bot pages. It does not bypass CAPTCHA or anti-bot systems.
@@ -68,6 +69,12 @@ Manual browser-assisted mode:
 npm run autocomplete -- --seed "find my parked car" --headless false --out ./results/parking.csv
 ```
 
+Validation pipeline with AI enabled:
+
+```bash
+npm run validate -- --idea "automatic app that saves parking location when Bluetooth disconnects" --ai true
+```
+
 Prepare the local SQLite database:
 
 ```bash
@@ -80,11 +87,16 @@ Run the first persisted validation flow:
 npm run validate -- --idea "automatic app that saves parking location when Bluetooth disconnects"
 ```
 
-Read the latest stored report for an idea or job:
+Run validation with external evidence collectors enabled:
 
 ```bash
-npm run report -- --idea-id 1 --format markdown
-npm run report -- --job-id 1 --format json
+npm run validate -- --idea "automatic app that saves parking location when Bluetooth disconnects" --external true
+```
+
+Scope external collection to selected surfaces:
+
+```bash
+npm run validate -- --idea "automatic app that saves parking location when Bluetooth disconnects" --external true --serp true --reddit true --youtube false --reviews true --competitors true
 ```
 
 ## Inputs
@@ -115,30 +127,12 @@ Custom modifiers replace the default modifier list.
 - Environment override: `FETCH_TRENDS_DB_PATH`
 - `npm run db -- --migrate` creates the schema and applies pending migrations.
 - `npm run validate -- --idea "..."`
-  stores ideas, jobs, tool runs, queries, autocomplete predictions, scores, and reports.
-- `npm run report -- --idea-id <id>` or `--job-id <id>`
-  reads the latest stored report without rerunning collection.
-
-## Project-Local Codex Skills
-
-This repo ships three project-local skills under `.codex/skills/`:
-
-- `micro-business-autocomplete`
-  runs autocomplete research and summarizes search-language evidence.
-- `micro-business-validate`
-  runs the local validation pipeline, then inspects the stored report.
-- `micro-business-report`
-  reads a stored report by idea ID or job ID and turns it into a concise summary.
-
-These skills wrap stable local commands. They do not replace the CLI, bypass the
-SQLite evidence store, or invent proof.
-
-Important limits:
-
-- Autocomplete is wording evidence, not demand volume.
-- The current validation pipeline is search-language-first.
-- Only real payment validates willingness to pay.
+  stores ideas, jobs, tool runs, queries, autocomplete predictions, scores, reports, sources, evidence, and competitors.
 - `validate` keeps the existing autocomplete CSV/JSON export behavior by writing artifacts under `./results/validate/`.
+- External collectors default to `false` until explicitly enabled with `--external true`.
+- Collector defaults live in `config/collectors.json`.
+- `SERP_API_KEY` enables the first live provider-backed external collector path.
+- Missing external provider keys produce warnings and blocked collector tool runs, but the validation job still completes.
 
 ## Default Modifiers
 
@@ -194,6 +188,13 @@ For `--out ./results/parking.csv`, the tool writes:
 - `./results/parking.summary.json`
 - `./results/parking.resume.json`
 
+When `npm run validate` runs with AI enabled, it can also write:
+
+- `./artifacts/ai-runs/job-<job-id>/*.input.json`
+- `./artifacts/ai-runs/job-<job-id>/*.prompt.txt`
+- `./artifacts/ai-runs/job-<job-id>/*.output.txt`
+- `./artifacts/ai-runs/job-<job-id>/*.metadata.json`
+
 CSV columns:
 
 ```text
@@ -213,6 +214,24 @@ next_validation_step
 ```
 
 ## Validation Flow
+
+`npm run validate` now follows this bounded pipeline:
+
+- deterministic idea record creation in SQLite
+- AI idea normalization when available
+- AI query generation when available
+- autocomplete collection through the existing Playwright utility
+- deterministic scoring
+- AI evidence summary when available
+- AI final report draft when available
+- fallback to deterministic scoring/reporting whenever AI is unavailable or invalid
+
+AI runs are evidence-first:
+
+- no web browsing
+- no source-file mutation
+- no direct SQLite writes from Codex
+- raw AI output stays in artifacts, while parsed JSON and metadata are stored in `tool_runs`
 
 - High purchase intent: check Keyword Planner and Google page 1 competitors.
 - How-to intent: check if a built-in or free solution already solves it.
