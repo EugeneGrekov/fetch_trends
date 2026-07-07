@@ -70,6 +70,7 @@ src/
     db.ts
     web.ts
     worker.ts
+    measurement.ts
 
   utilities/
     autocomplete/
@@ -107,6 +108,13 @@ src/
     evidence-extractor.ts
     scoring.ts
     report-generator.ts
+    types.ts
+
+  measurement/
+    event-recorder.ts
+    metrics-aggregator.ts
+    threshold-evaluator.ts
+    decision-report.ts
     types.ts
 
   db/
@@ -174,6 +182,7 @@ Commands:
 | `report` | Read or export the latest stored report by idea ID or job ID. |
 | `payment-test` | Generate a payment-intent test spec from stored validation evidence. |
 | `seo-plan` | Generate an evidence-backed SEO page plan from stored queries and evidence. |
+| `measurement` | Import local experiment events, evaluate thresholds, and persist measurement reports. |
 | `db` | Migration and database inspection tasks. |
 | `web` | Start local web interface. |
 | `worker` | Run queued validation jobs. |
@@ -375,6 +384,22 @@ User asks Codex to validate idea
   -> Codex summarizes result and next action
 ```
 
+### 5.5 Post-Launch Measurement Flow
+
+```text
+Stored payment-test report
+  -> experiment row
+  -> manual CSV or single-event imports
+  -> raw experiment_events rows
+  -> deterministic metrics aggregation
+  -> threshold evaluation against stored payment-test thresholds
+  -> measurement snapshot
+  -> measurement report
+  -> experiment decision
+```
+
+Measurement is local-first. It does not call analytics providers, payment processors, Search Console, Google Analytics, or email systems.
+
 ## 6. Database Architecture
 
 ### 6.1 Tables
@@ -393,6 +418,10 @@ Initial tables:
 | `competitors` | Competitor and alternative solution records. |
 | `scores` | Scoring snapshots. |
 | `reports` | Markdown and JSON reports. |
+| `experiments` | Launched validation experiment metadata and stored threshold JSON. |
+| `experiment_events` | Raw behavior events imported manually or from local files. |
+| `measurement_snapshots` | Aggregate metric and threshold-evaluation snapshots. |
+| `experiment_decisions` | Decision snapshots linked to measurement reports. |
 
 ### 6.2 Logical Schema
 
@@ -508,6 +537,43 @@ reports
 - markdown
 - json
 - created_at
+
+experiments
+- id
+- idea_id
+- report_id
+- experiment_type
+- title
+- status
+- threshold_json
+- created_at
+- launched_at
+- completed_at
+
+experiment_events
+- id
+- experiment_id
+- event_name
+- occurred_at
+- source
+- session_id
+- metadata_json
+- created_at
+
+measurement_snapshots
+- id
+- experiment_id
+- metrics_json
+- threshold_results_json
+- created_at
+
+experiment_decisions
+- id
+- experiment_id
+- decision
+- reason
+- report_id
+- created_at
 ```
 
 ### 6.3 Persistence Rules
@@ -520,6 +586,9 @@ reports
 - Reports are snapshots. Re-reporting should create a new report row.
 - Derived experiment artifacts use `report_type = payment_test_spec` and `report_type = seo_plan`.
 - Derived artifacts may also be written to `artifacts/ideas/<idea-id>/` for Markdown/JSON export, but SQLite remains the local source of truth.
+- Measurement reports use `report_type = measurement_report`.
+- Measurement decisions are snapshots. Re-evaluating an experiment creates new snapshot, report, and decision rows rather than overwriting prior decisions.
+- Raw experiment events are stored before metrics or recommendations are generated.
 
 ## 7. Validation Contracts
 

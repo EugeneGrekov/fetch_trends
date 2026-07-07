@@ -7,6 +7,16 @@ import { applyMigrations } from '../migrations.js';
 import { createAutocompletePredictions, listAutocompletePredictionsByIdea } from './autocomplete-predictions.js';
 import { createCompetitors, listCompetitorsByIdea } from './competitors.js';
 import { createEvidence, listEvidenceByIdea, listEvidenceBySource } from './evidence.js';
+import {
+  createExperiment,
+  createExperimentDecision,
+  createExperimentEvents,
+  createMeasurementSnapshot,
+  listExperimentDecisions,
+  listExperimentEvents,
+  listExperimentsByIdea,
+  listMeasurementSnapshots,
+} from './experiments.js';
 import { createIdea, getIdeaById } from './ideas.js';
 import { completeJob, createJob } from './jobs.js';
 import { createQueries, listQueriesByIdea } from './queries.js';
@@ -130,6 +140,48 @@ describe('database repositories', () => {
         json: '{"decision":"validate deeper"}',
         createdAt: '2026-07-07T10:03:00.000Z',
       });
+      const experiment = createExperiment(db, {
+        createdAt: '2026-07-07T10:04:00.000Z',
+        experimentType: 'fake_door',
+        ideaId: idea.id,
+        launchedAt: '2026-07-07T10:05:00.000Z',
+        reportId: report.id,
+        status: 'launched',
+        thresholdJson: '{"thresholds":[]}',
+        title: 'Parking fake-door test',
+      });
+      createExperimentEvents(db, [
+        {
+          createdAt: '2026-07-07T10:06:00.000Z',
+          eventName: 'page_view',
+          experimentId: experiment.id,
+          occurredAt: '2026-07-07T10:05:30.000Z',
+          source: 'fixture',
+          sessionId: 's1',
+        },
+        {
+          createdAt: '2026-07-07T10:06:00.000Z',
+          eventName: 'cta_click',
+          experimentId: experiment.id,
+          metadataJson: '{"cta":"primary"}',
+          occurredAt: '2026-07-07T10:05:45.000Z',
+          source: 'fixture',
+          sessionId: 's1',
+        },
+      ]);
+      const snapshot = createMeasurementSnapshot(db, {
+        createdAt: '2026-07-07T10:07:00.000Z',
+        experimentId: experiment.id,
+        metricsJson: '{"visitors":1}',
+        thresholdResultsJson: '[]',
+      });
+      createExperimentDecision(db, {
+        createdAt: '2026-07-07T10:08:00.000Z',
+        decision: 'inconclusive',
+        experimentId: experiment.id,
+        reason: 'Needs more visitors.',
+        reportId: report.id,
+      });
 
       const completedToolRun = completeToolRun(db, toolRun.id, '{"finalSummary":{"predictionCount":1}}', '2026-07-07T10:02:30.000Z');
       const completedJob = completeJob(db, job.id, '2026-07-07T10:03:00.000Z');
@@ -153,6 +205,19 @@ describe('database repositories', () => {
       ]);
       expect(listReportsByJob(db, job.id)).toEqual([
         expect.objectContaining({ id: report.id, job_id: job.id }),
+      ]);
+      expect(listExperimentsByIdea(db, idea.id)).toEqual([
+        expect.objectContaining({ id: experiment.id, title: 'Parking fake-door test' }),
+      ]);
+      expect(listExperimentEvents(db, experiment.id).map((event) => event.event_name)).toEqual([
+        'page_view',
+        'cta_click',
+      ]);
+      expect(listMeasurementSnapshots(db, experiment.id)).toEqual([
+        expect.objectContaining({ id: snapshot.id, metrics_json: '{"visitors":1}' }),
+      ]);
+      expect(listExperimentDecisions(db, experiment.id)).toEqual([
+        expect.objectContaining({ decision: 'inconclusive', report_id: report.id }),
       ]);
     } finally {
       db.close();

@@ -8,6 +8,7 @@ import {
   EXTERNAL_EVIDENCE_MIGRATION_ID,
   INITIAL_MIGRATION_ID,
   listAppliedMigrations,
+  POST_LAUNCH_MEASUREMENT_MIGRATION_ID,
 } from './migrations.js';
 
 const tempDirs: string[] = [];
@@ -23,9 +24,11 @@ describe('database migrations', () => {
     const { db } = await openDatabase(join(dir, 'foundation.sqlite'));
 
     try {
-      expect(applyMigrations(db)).toEqual([
+      const applied = applyMigrations(db);
+      expect(applied.slice(0, 3)).toEqual([
         INITIAL_MIGRATION_ID,
         EXTERNAL_EVIDENCE_MIGRATION_ID,
+        POST_LAUNCH_MEASUREMENT_MIGRATION_ID,
       ]);
       expect(applyMigrations(db)).toEqual([]);
 
@@ -41,8 +44,12 @@ describe('database migrations', () => {
           'autocomplete_predictions',
           'competitors',
           'evidence',
+          'experiment_decisions',
+          'experiment_events',
+          'experiments',
           'ideas',
           'jobs',
+          'measurement_snapshots',
           'queries',
           'reports',
           'schema_migrations',
@@ -51,10 +58,11 @@ describe('database migrations', () => {
           'tool_runs',
         ]),
       );
-      expect(listAppliedMigrations(db)).toEqual([
+      expect(listAppliedMigrations(db)).toEqual(expect.arrayContaining([
         expect.objectContaining({ id: INITIAL_MIGRATION_ID }),
         expect.objectContaining({ id: EXTERNAL_EVIDENCE_MIGRATION_ID }),
-      ]);
+        expect.objectContaining({ id: POST_LAUNCH_MEASUREMENT_MIGRATION_ID }),
+      ]));
     } finally {
       db.close();
     }

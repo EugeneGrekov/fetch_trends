@@ -120,6 +120,47 @@ export interface CompetitorRow {
   created_at: string;
 }
 
+export interface ExperimentRow {
+  id: number;
+  idea_id: number;
+  report_id: number | null;
+  experiment_type: string;
+  title: string;
+  status: string;
+  threshold_json: string;
+  created_at: string;
+  launched_at: string | null;
+  completed_at: string | null;
+}
+
+export interface ExperimentEventRow {
+  id: number;
+  experiment_id: number;
+  event_name: string;
+  occurred_at: string;
+  source: string;
+  session_id: string | null;
+  metadata_json: string | null;
+  created_at: string;
+}
+
+export interface MeasurementSnapshotRow {
+  id: number;
+  experiment_id: number;
+  metrics_json: string;
+  threshold_results_json: string;
+  created_at: string;
+}
+
+export interface ExperimentDecisionRow {
+  id: number;
+  experiment_id: number;
+  decision: string;
+  reason: string;
+  report_id: number | null;
+  created_at: string;
+}
+
 export interface CreateIdeaInput {
   title: string;
   rawDescription: string;
@@ -233,5 +274,42 @@ export interface CreateCompetitorInput {
   strengthsJson?: string | null;
   weaknessesJson?: string | null;
   reviewSummary?: string | null;
+  createdAt: string;
+}
+
+export interface CreateExperimentInput {
+  ideaId: number;
+  reportId?: number | null;
+  experimentType: string;
+  title: string;
+  status: string;
+  thresholdJson: string;
+  createdAt: string;
+  launchedAt?: string | null;
+  completedAt?: string | null;
+}
+
+export interface CreateExperimentEventInput {
+  experimentId: number;
+  eventName: string;
+  occurredAt: string;
+  source: string;
+  sessionId?: string | null;
+  metadataJson?: string | null;
+  createdAt: string;
+}
+
+export interface CreateMeasurementSnapshotInput {
+  experimentId: number;
+  metricsJson: string;
+  thresholdResultsJson: string;
+  createdAt: string;
+}
+
+export interface CreateExperimentDecisionInput {
+  experimentId: number;
+  decision: string;
+  reason: string;
+  reportId?: number | null;
   createdAt: string;
 }

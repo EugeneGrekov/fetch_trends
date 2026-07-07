@@ -3,6 +3,7 @@ import { expectRows } from './results.js';
 
 export const INITIAL_MIGRATION_ID = '001_initial_validation_tables';
 export const EXTERNAL_EVIDENCE_MIGRATION_ID = '002_external_evidence_tables';
+export const POST_LAUNCH_MEASUREMENT_MIGRATION_ID = '003_post_launch_measurement_tables';
 
 interface MigrationDefinition {
   id: string;
@@ -167,6 +168,65 @@ const MIGRATIONS: MigrationDefinition[] = [
       CREATE INDEX idx_evidence_idea_id ON evidence (idea_id);
       CREATE INDEX idx_evidence_source_id ON evidence (source_id);
       CREATE INDEX idx_competitors_idea_id ON competitors (idea_id);
+    `,
+  },
+  {
+    id: POST_LAUNCH_MEASUREMENT_MIGRATION_ID,
+    sql: `
+      CREATE TABLE experiments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        report_id INTEGER,
+        experiment_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        status TEXT NOT NULL,
+        threshold_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        launched_at TEXT,
+        completed_at TEXT,
+        FOREIGN KEY (idea_id) REFERENCES ideas(id),
+        FOREIGN KEY (report_id) REFERENCES reports(id)
+      );
+
+      CREATE TABLE experiment_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        experiment_id INTEGER NOT NULL,
+        event_name TEXT NOT NULL,
+        occurred_at TEXT NOT NULL,
+        source TEXT NOT NULL,
+        session_id TEXT,
+        metadata_json TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (experiment_id) REFERENCES experiments(id)
+      );
+
+      CREATE TABLE measurement_snapshots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        experiment_id INTEGER NOT NULL,
+        metrics_json TEXT NOT NULL,
+        threshold_results_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (experiment_id) REFERENCES experiments(id)
+      );
+
+      CREATE TABLE experiment_decisions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        experiment_id INTEGER NOT NULL,
+        decision TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        report_id INTEGER,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (experiment_id) REFERENCES experiments(id),
+        FOREIGN KEY (report_id) REFERENCES reports(id)
+      );
+
+      CREATE INDEX idx_experiments_idea_id ON experiments (idea_id);
+      CREATE INDEX idx_experiments_report_id ON experiments (report_id);
+      CREATE INDEX idx_experiment_events_experiment_id ON experiment_events (experiment_id);
+      CREATE INDEX idx_experiment_events_event_name ON experiment_events (event_name);
+      CREATE INDEX idx_measurement_snapshots_experiment_id ON measurement_snapshots (experiment_id);
+      CREATE INDEX idx_experiment_decisions_experiment_id ON experiment_decisions (experiment_id);
+      CREATE INDEX idx_experiment_decisions_report_id ON experiment_decisions (report_id);
     `,
   },
 ];
