@@ -33,6 +33,8 @@ npx playwright install chromium
 
 ## Usage
 
+For end-to-end command sequences, see [Workflow Recipes](docs/workflows.md).
+
 Single seed:
 
 ```bash
