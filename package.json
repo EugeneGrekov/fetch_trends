@@ -28,6 +28,7 @@
     "measurement": "tsx src/measurement.ts",
     "payment-test": "tsx src/payment-test.ts",
     "report": "tsx src/report.ts",
+    "roadmap:check": "tsx scripts/check-roadmap.ts",
     "revalidate": "tsx src/revalidate.ts",
     "seo-plan": "tsx src/seo-plan.ts",
     "test": "vitest --run",

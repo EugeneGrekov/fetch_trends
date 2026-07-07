@@ -201,6 +201,16 @@ These commands are part of adjacent plans but are not required by the release pa
 - SQLite writes: temp DB only.
 - File outputs: temp files only.
 
+### `npm run roadmap:check`
+
+- Purpose: run offline roadmap governance verification.
+- Example: `npm run roadmap:check`
+- Inputs: roadmap governance docs, phase templates, implementation notes, and implementation order.
+- Outputs: pass/warn/fail summary with plan, implementation-note, missing-document, and warning counts.
+- Live services: no.
+- SQLite writes: no.
+- File outputs: no.
+
 ### `npm run package:local`
 
 - Purpose: build a local package directory for inspection or handoff.

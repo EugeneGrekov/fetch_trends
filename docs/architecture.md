@@ -451,6 +451,23 @@ Rules:
 - Package outputs must not include SQLite DBs, `results/`, `artifacts/`, backups, exports, `.env` files, logs, or resume files.
 - `diagnose` is optional in release checks until the diagnostics command is wired into `package.json`; missing diagnostics should produce a warning, not a false pass.
 
+### 4.11 Roadmap Governance
+
+Roadmap governance is the local process layer for phase sequencing, verification, documentation, and retirement.
+
+Responsibilities:
+
+- Keep `docs/implementation-order.md` aligned with phase plans and implementation notes.
+- Define lifecycle statuses for proposed, planned, delegated, in-progress, implemented, verified, deferred, retired, superseded, and blocked phases.
+- Provide templates for future phase plans and implementation notes.
+- Check roadmap structure offline without calling live collectors, Codex, payment providers, Search Console, analytics services, or hosted infrastructure.
+
+Rules:
+
+- Governance does not add product runtime behavior, collectors, database tables, cloud project management integration, issue tracker sync, multi-user assignment, or AI-only prioritization.
+- `npm run roadmap:check` is a documentation and process check only.
+- New phases after roadmap governance should be created from templates and retired explicitly when they no longer fit the evidence-first local flow.
+
 ## 5. Data Flow
 
 ### 5.1 Autocomplete-Only Flow
