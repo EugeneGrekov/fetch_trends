@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { expectRow } from '../results.js';
+import { expectRow, expectRows } from '../results.js';
 import type { CreateJobInput, JobRow } from '../schema.js';
 
 export function createJob(db: DatabaseSync, input: CreateJobInput): JobRow {
@@ -29,6 +29,19 @@ export function createJob(db: DatabaseSync, input: CreateJobInput): JobRow {
   return getJobById(db, Number(result.lastInsertRowid));
 }
 
+export function startJob(db: DatabaseSync, id: number, startedAt: string): JobRow {
+  db.prepare(`
+    UPDATE jobs
+    SET status = 'running',
+        started_at = :startedAt,
+        completed_at = NULL,
+        error_message = NULL
+    WHERE id = :id
+  `).run({ id, startedAt });
+
+  return getJobById(db, id);
+}
+
 export function completeJob(db: DatabaseSync, id: number, completedAt: string): JobRow {
   db.prepare(`
     UPDATE jobs
@@ -55,4 +68,27 @@ export function failJob(db: DatabaseSync, id: number, errorMessage: string, comp
 
 export function getJobById(db: DatabaseSync, id: number): JobRow {
   return expectRow<JobRow>(db.prepare('SELECT * FROM jobs WHERE id = ?').get(id), `Job ${id} was not found.`);
+}
+
+export function listJobsByIdea(db: DatabaseSync, ideaId: number): JobRow[] {
+  return expectRows<JobRow>(
+    db.prepare(`
+      SELECT *
+      FROM jobs
+      WHERE idea_id = :ideaId
+      ORDER BY id DESC
+    `).all({ ideaId }),
+  );
+}
+
+export function listJobsByStatus(db: DatabaseSync, status: string, limit = 25): JobRow[] {
+  return expectRows<JobRow>(
+    db.prepare(`
+      SELECT *
+      FROM jobs
+      WHERE status = :status
+      ORDER BY id ASC
+      LIMIT :limit
+    `).all({ status, limit }),
+  );
 }

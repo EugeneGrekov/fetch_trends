@@ -287,6 +287,15 @@ Responsibilities:
 
 The web UI must not implement a separate validation path.
 
+Current implementation:
+
+- `npm run web` starts a dependency-light Node HTTP server.
+- `npm run worker` runs pending SQLite jobs outside the web process.
+- `src/web/services.ts` is the web boundary for repositories and the
+  validation orchestrator.
+- Routes render server-side HTML and expose small JSON APIs for polling.
+- Report export reads stored `reports` rows as markdown or JSON.
+
 ### 4.7 Codex Skills
 
 Codex skills are agent-facing wrappers around local tools.
@@ -346,13 +355,13 @@ Raw idea
 
 ```text
 Browser form submit
-  -> POST /ideas
-  -> create idea
-  -> create job
+  -> POST /api/ideas
+  -> create idea row
+  -> create pending job row
   -> redirect to job page
-  -> worker runs job
+  -> in-process or separate worker runs existing orchestrator
   -> UI polls status
-  -> UI renders stored evidence and report
+  -> UI renders stored evidence, score, and report rows
 ```
 
 ### 5.4 Codex Skill Flow

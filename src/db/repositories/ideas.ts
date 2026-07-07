@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { expectRow } from '../results.js';
+import { expectRow, expectRows } from '../results.js';
 import type { CreateIdeaInput, IdeaRow, UpdateIdeaInput } from '../schema.js';
 
 export function createIdea(db: DatabaseSync, input: CreateIdeaInput): IdeaRow {
@@ -46,6 +46,17 @@ export function createIdea(db: DatabaseSync, input: CreateIdeaInput): IdeaRow {
 
 export function getIdeaById(db: DatabaseSync, id: number): IdeaRow {
   return expectRow<IdeaRow>(db.prepare('SELECT * FROM ideas WHERE id = ?').get(id), `Idea ${id} was not found.`);
+}
+
+export function listIdeas(db: DatabaseSync, limit = 25): IdeaRow[] {
+  return expectRows<IdeaRow>(
+    db.prepare(`
+      SELECT *
+      FROM ideas
+      ORDER BY updated_at DESC, id DESC
+      LIMIT :limit
+    `).all({ limit }),
+  );
 }
 
 export function updateIdea(db: DatabaseSync, id: number, input: UpdateIdeaInput): IdeaRow {

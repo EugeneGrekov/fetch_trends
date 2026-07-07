@@ -18,8 +18,13 @@ export interface ValidationOptions {
   aiModel?: string;
   aiReasoning?: string;
   idea: string;
+  ideaId?: number;
+  jobId?: number;
   dbPath?: string;
   outDir?: string;
+  targetMarket?: string | null;
+  platform?: string | null;
+  expectedPrice?: string | null;
   country: string;
   language: string;
   depth: 1 | 2;

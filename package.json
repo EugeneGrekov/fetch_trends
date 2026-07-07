@@ -21,7 +21,9 @@
     "seo-plan": "tsx src/seo-plan.ts",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "validate": "tsx src/validate.ts"
+    "validate": "tsx src/validate.ts",
+    "web": "tsx src/commands/web.ts",
+    "worker": "tsx src/commands/worker.ts"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -14,7 +14,7 @@ import { openDatabase } from '../db/connection.js';
 import { applyMigrations } from '../db/migrations.js';
 import { createAutocompletePredictions } from '../db/repositories/autocomplete-predictions.js';
 import { createIdea, updateIdea } from '../db/repositories/ideas.js';
-import { completeJob, createJob, failJob } from '../db/repositories/jobs.js';
+import { completeJob, createJob, failJob, getJobById, startJob } from '../db/repositories/jobs.js';
 import { createQueries } from '../db/repositories/queries.js';
 import { createReport } from '../db/repositories/reports.js';
 import { createScore } from '../db/repositories/scores.js';
@@ -41,23 +41,36 @@ export async function runValidationJob(
   const { db, dbPath } = await openDatabase(options.dbPath);
   applyMigrations(db);
 
-  const deterministicIdea = normalizeIdea(options.idea);
-  let idea = createIdea(db, {
-    title: deterministicIdea.title,
-    rawDescription: deterministicIdea.cleanedIdea,
-    normalizedJson: JSON.stringify({ source: 'deterministic', ...deterministicIdea }),
-    targetMarket: deterministicIdea.targetMarket,
-    platform: deterministicIdea.platform,
-    expectedPrice: deterministicIdea.expectedPrice,
-    businessModel: deterministicIdea.businessModel,
-    status: 'new',
-  });
-  const job = createJob(db, {
-    ideaId: idea.id,
-    jobType: 'validate',
-    status: 'running',
-    startedAt: new Date().toISOString(),
-  });
+  const deterministicIdea = applyInputOverrides(normalizeIdea(options.idea), options);
+  let idea = options.ideaId
+    ? updateIdea(db, options.ideaId, {
+        title: deterministicIdea.title,
+        rawDescription: deterministicIdea.cleanedIdea,
+        normalizedJson: JSON.stringify({ source: 'deterministic', ...deterministicIdea }),
+        targetMarket: deterministicIdea.targetMarket,
+        platform: deterministicIdea.platform,
+        expectedPrice: deterministicIdea.expectedPrice,
+        businessModel: deterministicIdea.businessModel,
+        status: 'validating',
+      })
+    : createIdea(db, {
+        title: deterministicIdea.title,
+        rawDescription: deterministicIdea.cleanedIdea,
+        normalizedJson: JSON.stringify({ source: 'deterministic', ...deterministicIdea }),
+        targetMarket: deterministicIdea.targetMarket,
+        platform: deterministicIdea.platform,
+        expectedPrice: deterministicIdea.expectedPrice,
+        businessModel: deterministicIdea.businessModel,
+        status: 'new',
+      });
+  const job = options.jobId
+    ? startExistingJob(db, options.jobId, idea.id)
+    : createJob(db, {
+        ideaId: idea.id,
+        jobType: 'validate',
+        status: 'running',
+        startedAt: new Date().toISOString(),
+      });
 
   const aiSummary: ValidationAiSummary = {
     evidenceSummary: emptyEvidenceSummary(),
@@ -343,6 +356,7 @@ export async function runValidationJob(
       new Date().toISOString(),
     );
     const completedJob = completeJob(db, job.id, new Date().toISOString());
+    idea = updateIdea(db, idea.id, { status: 'validated' });
 
     return {
       ai: aiSummary,
@@ -367,10 +381,29 @@ export async function runValidationJob(
     }
 
     failJob(db, job.id, message, failedAt);
+    updateIdea(db, idea.id, { status: 'failed' });
     throw error;
   } finally {
     db.close();
   }
+}
+
+function startExistingJob(db: Parameters<typeof startJob>[0], jobId: number, ideaId: number) {
+  const existingJob = getJobById(db, jobId);
+  if (existingJob.idea_id !== ideaId) {
+    throw new Error(`Job ${jobId} does not belong to idea ${ideaId}.`);
+  }
+
+  return startJob(db, jobId, new Date().toISOString());
+}
+
+function applyInputOverrides(base: NormalizedIdea, options: ValidationOptions): NormalizedIdea {
+  return {
+    ...base,
+    targetMarket: normalizeOptionalInput(options.targetMarket) ?? base.targetMarket,
+    platform: normalizeOptionalInput(options.platform) ?? base.platform,
+    expectedPrice: normalizeOptionalInput(options.expectedPrice) ?? base.expectedPrice,
+  };
 }
 
 async function selectQueries(args: {
@@ -502,6 +535,11 @@ function clampPriority(priority: number): number {
   }
 
   return Math.max(1, Math.min(100, Math.round(priority)));
+}
+
+function normalizeOptionalInput(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
 }
 
 function emptyEvidenceSummary(): EvidenceSummaryOutput {

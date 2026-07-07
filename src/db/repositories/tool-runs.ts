@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { expectRow } from '../results.js';
+import { expectRow, expectRows } from '../results.js';
 import type { CreateToolRunInput, ToolRunRow } from '../schema.js';
 
 export function createToolRun(db: DatabaseSync, input: CreateToolRunInput): ToolRunRow {
@@ -115,5 +115,16 @@ export function getToolRunById(db: DatabaseSync, id: number): ToolRunRow {
   return expectRow<ToolRunRow>(
     db.prepare('SELECT * FROM tool_runs WHERE id = ?').get(id),
     `Tool run ${id} was not found.`,
+  );
+}
+
+export function listToolRunsByJob(db: DatabaseSync, jobId: number): ToolRunRow[] {
+  return expectRows<ToolRunRow>(
+    db.prepare(`
+      SELECT *
+      FROM tool_runs
+      WHERE job_id = :jobId
+      ORDER BY id ASC
+    `).all({ jobId }),
   );
 }
