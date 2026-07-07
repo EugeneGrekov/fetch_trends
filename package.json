@@ -13,7 +13,10 @@
     "fetch-trends-payment-test": "./dist/src/payment-test.js",
     "fetch-trends-revalidate": "./dist/src/revalidate.js",
     "fetch-trends-seo-plan": "./dist/src/seo-plan.js",
-    "fetch-trends-validate": "./dist/src/validate.js"
+    "fetch-trends-validate": "./dist/src/validate.js",
+    "fetch-trends-report": "./dist/src/report.js",
+    "fetch-trends-web": "./dist/src/commands/web.js",
+    "fetch-trends-worker": "./dist/src/commands/worker.js"
   },
   "scripts": {
     "autocomplete": "tsx src/cli.ts",
@@ -31,7 +34,9 @@
     "test:watch": "vitest",
     "validate": "tsx src/validate.ts",
     "web": "tsx src/commands/web.ts",
-    "worker": "tsx src/commands/worker.ts"
+    "worker": "tsx src/commands/worker.ts",
+    "package:local": "tsx scripts/package-local.ts",
+    "release:check": "tsx scripts/release-check.ts"
   },
   "engines": {
     "node": ">=20.0.0"

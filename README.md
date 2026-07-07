@@ -31,6 +31,12 @@ If Chromium is not available locally:
 npx playwright install chromium
 ```
 
+Detailed setup and release verification docs:
+
+- Install guide: `docs/install.md`
+- Command reference: `docs/commands.md`
+- Release checklist: `docs/release-checklist.md`
+
 ## Usage
 
 For end-to-end command sequences, see [Workflow Recipes](docs/workflows.md).
@@ -247,4 +253,11 @@ AI runs are evidence-first:
 npm run build
 npm test
 npm run lint
+```
+
+Release packaging checks:
+
+```bash
+npm run release:check
+npm run package:local -- --out ./dist-package/fetch-trends
 ```

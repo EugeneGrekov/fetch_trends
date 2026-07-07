@@ -191,6 +191,15 @@ docs/
   global-plan.md
   architecture.md
 
+scripts/
+  release-check.ts
+  package-local.ts
+  release-support.ts
+
+config/
+  collectors.json
+  example.env
+
 .codex/
   skills/
     micro-business-autocomplete/
@@ -422,6 +431,25 @@ Rules:
 - Measurement events and decisions are historical facts. They are not automatically stale, though later snapshots can supersede earlier interpretations.
 - Revalidation is local and explicit. There is no daemon or cloud scheduler in the first implementation.
 - Portfolio refresh is represented as a queue task marker until portfolio ranking exists in code.
+
+### 4.10 Release Packaging
+
+Release packaging is the local verification and handoff layer.
+
+Responsibilities:
+
+- Keep install and command documentation aligned with `package.json`.
+- Verify build output, package bin paths, required docs, local Codex skills, and migration readiness.
+- Run tests, build, lint, and diagnostics when diagnostics are exposed by the current checkout.
+- Provide a local package directory for inspection without publishing to npm or a global Codex marketplace.
+- Exclude generated local data from package outputs.
+
+Rules:
+
+- Release checks must not call live external APIs, live Codex, payment providers, Search Console, analytics services, or hosted infrastructure.
+- Package outputs may include runtime code, docs, prompts, nonsecret config, and local Codex skills.
+- Package outputs must not include SQLite DBs, `results/`, `artifacts/`, backups, exports, `.env` files, logs, or resume files.
+- `diagnose` is optional in release checks until the diagnostics command is wired into `package.json`; missing diagnostics should produce a warning, not a false pass.
 
 ## 5. Data Flow
 

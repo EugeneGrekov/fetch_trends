@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-package/
 dist-ssr
 *.local
 .idea
@@ -23,9 +24,13 @@ dist-ssr
 deno.lock
 tmp/
 artifacts/
+backups/
+exports/
 results/
 *.sqlite
 *.sqlite-*
+*.db
+*.db-*
 *.resume.json
 runs/
 underfined/
