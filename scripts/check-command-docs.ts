@@ -2,6 +2,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { DOCS } from './docs-paths.js';
 
 export interface PackageJson {
   scripts?: Record<string, string>;
@@ -25,14 +26,14 @@ export async function checkCommandDocs(projectRoot: string): Promise<CommandDocs
   const scripts = new Set(Object.keys(packageJson.scripts ?? {}));
   const warnings: string[] = [];
 
-  const commandsDocPath = join(root, 'docs', 'commands.md');
+  const commandsDocPath = resolve(root, DOCS.reference.commands);
   const commandsDoc = await readOptionalFile(commandsDocPath);
   const missingCommandReferenceScripts = commandsDoc == null
     ? []
     : missingDocumentedScripts(commandsDoc, scripts);
 
   if (commandsDoc == null) {
-    warnings.push('docs/commands.md is missing; command reference coverage was skipped.');
+    warnings.push(`${DOCS.reference.commands} is missing; command reference coverage was skipped.`);
   }
 
   const readmeReferences = extractNpmRunReferences(
@@ -78,7 +79,7 @@ export function referencesMissingFromScripts(
 export function commandDocsFailures(result: CommandDocsCheckResult): string[] {
   return [
     ...result.missingCommandReferenceScripts.map(
-      (scriptName) => `docs/commands.md does not document npm run ${scriptName}.`,
+      (scriptName) => `${DOCS.reference.commands} does not document npm run ${scriptName}.`,
     ),
     ...formatUnknownReferences('README.md references an unknown npm script', result.unknownReadmeScripts),
     ...formatUnknownReferences('Recipe references an unknown npm script', result.unknownRecipeScripts),

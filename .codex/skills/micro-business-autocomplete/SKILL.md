@@ -20,8 +20,8 @@ Autocomplete validates wording, not demand volume or willingness to pay.
 Inspect these first when the task is ambiguous:
 
 1. `README.md`
-2. `docs/architecture.md`
-3. `docs/codex-skills-plan.md`
+2. `docs/reference/architecture.md`
+3. `docs/features/codex-skills/plan.md`
 
 ## Run
 

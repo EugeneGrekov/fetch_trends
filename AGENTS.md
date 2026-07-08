@@ -24,7 +24,7 @@ dedicated plan document before implementation.
 Use this path format:
 
 ```text
-docs/<feature-name>-plan.md
+docs/features/<feature-name>/plan.md
 ```
 
 Use lowercase kebab-case for `<feature-name>`.
@@ -32,9 +32,9 @@ Use lowercase kebab-case for `<feature-name>`.
 Examples:
 
 ```text
-docs/autocomplete-refactor-plan.md
-docs/sqlite-foundation-plan.md
-docs/ai-runner-plan.md
+docs/features/autocomplete-refactor/plan.md
+docs/features/sqlite-foundation/plan.md
+docs/features/ai-runner/plan.md
 ```
 
 Each feature plan should use this structure:
@@ -83,8 +83,32 @@ Documentation rules:
 
 - Keep feature docs practical and implementation-ready.
 - Keep docs in `docs/`; keep `HOWTO/` as working reference material.
-- Update `docs/architecture.md` when a feature changes module boundaries,
+- Every implementation job must document what was actually implemented.
+  Prefer a separate implementation note:
+
+```text
+docs/features/<feature-name>/implementation.md
+```
+
+- Implementation notes should include:
+  - summary of what changed
+  - files/modules added or changed
+  - commands added or changed
+  - schema/migration changes, if any
+  - tests added or updated
+  - verification results for `npm test`, `npm run build`, and `npm run lint`
+  - known limitations
+  - follow-up work
+- Update `docs/reference/architecture.md` when a feature changes module boundaries,
   persistence, command structure, AI behavior, or web architecture.
+- Keep a short `README.md` in each project-owned directory explaining purpose,
+  boundaries, and ownership. Skip ignored generated directories such as
+  `results/`, `artifacts/`, `exports/`, `backups/`, `dist/`, and
+  `node_modules/` unless the user explicitly asks.
+- Update the original `docs/features/<feature-name>/plan.md` only when implementation
+  intentionally diverges from the plan, when scope is deferred, or when
+  acceptance criteria change. Do not rewrite the plan just to narrate completed
+  work; put completion details in the implementation note.
 - Do not mix unrelated implementation into a documentation-only change.
 - If implementation diverges from a feature plan, update the plan or record the
   decision in the relevant architecture document.

@@ -11,22 +11,25 @@
     "fetch-trends-diagnose": "./dist/src/diagnose.js",
     "fetch-trends-measurement": "./dist/src/measurement.js",
     "fetch-trends-payment-test": "./dist/src/payment-test.js",
+    "fetch-trends-report": "./dist/src/report.js",
     "fetch-trends-revalidate": "./dist/src/revalidate.js",
     "fetch-trends-seo-plan": "./dist/src/seo-plan.js",
     "fetch-trends-validate": "./dist/src/validate.js",
-    "fetch-trends-report": "./dist/src/report.js",
     "fetch-trends-web": "./dist/src/commands/web.js",
     "fetch-trends-worker": "./dist/src/commands/worker.js"
   },
   "scripts": {
     "autocomplete": "tsx src/cli.ts",
+    "backlog:check": "tsx scripts/check-backlog.ts",
     "db": "tsx src/db.ts",
     "build": "tsc -p tsconfig.json",
     "decide": "tsx src/decide.ts",
     "diagnose": "tsx src/diagnose.ts",
     "lint": "eslint .",
     "measurement": "tsx src/measurement.ts",
+    "package:local": "tsx scripts/package-local.ts",
     "payment-test": "tsx src/payment-test.ts",
+    "release:check": "tsx scripts/release-check.ts",
     "report": "tsx src/report.ts",
     "roadmap:check": "tsx scripts/check-roadmap.ts",
     "revalidate": "tsx src/revalidate.ts",
@@ -35,9 +38,7 @@
     "test:watch": "vitest",
     "validate": "tsx src/validate.ts",
     "web": "tsx src/commands/web.ts",
-    "worker": "tsx src/commands/worker.ts",
-    "package:local": "tsx scripts/package-local.ts",
-    "release:check": "tsx scripts/release-check.ts"
+    "worker": "tsx src/commands/worker.ts"
   },
   "engines": {
     "node": ">=20.0.0"

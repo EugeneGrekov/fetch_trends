@@ -2,26 +2,16 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DOCS } from './docs-paths.js';
 
 interface PackageJson {
   scripts?: Record<string, string>;
 }
 
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const recipeDir = join(rootDir, 'docs', 'recipes');
-const workflowIndexPath = join(rootDir, 'docs', 'workflows.md');
+const recipeDir = join(rootDir, DOCS.recipes.root);
+const workflowIndexPath = join(rootDir, DOCS.recipes.index);
 const packageJsonPath = join(rootDir, 'package.json');
-
-const recipeFiles = [
-  'validate-one-idea.md',
-  'compare-idea-portfolio.md',
-  'run-payment-test.md',
-  'measure-experiment.md',
-  'decide-pivot-or-persevere.md',
-  'revalidate-stale-evidence.md',
-  'backup-and-restore.md',
-  'diagnose-local-setup.md',
-];
 
 const requiredHeadings = [
   '## When To Use',
@@ -37,11 +27,9 @@ async function main(): Promise<void> {
   const errors: string[] = [];
   const packageJson = await readJson<PackageJson>(packageJsonPath);
   const packageScripts = new Set(Object.keys(packageJson.scripts ?? {}));
-  const markdownFiles: Array<{ label: string; path: string }> = [
-    { label: 'docs/workflows.md', path: workflowIndexPath },
-  ];
+  const markdownFiles: Array<{ label: string; path: string }> = [{ label: DOCS.recipes.index, path: workflowIndexPath }];
 
-  for (const recipeFile of recipeFiles) {
+  for (const recipeFile of DOCS.recipes.files) {
     const recipePath = join(recipeDir, recipeFile);
     markdownFiles.push({ label: `docs/recipes/${recipeFile}`, path: recipePath });
 
@@ -63,13 +51,13 @@ async function main(): Promise<void> {
   }
 
   if (!existsSync(workflowIndexPath)) {
-    errors.push('Missing workflow index: docs/workflows.md');
+    errors.push('Missing workflow index: docs/recipes/README.md');
   } else {
     const workflowIndex = await readFile(workflowIndexPath, 'utf8');
     for (const recipeFile of recipeFiles) {
-      const expectedLink = `./recipes/${recipeFile}`;
+      const expectedLink = `./${recipeFile}`;
       if (!workflowIndex.includes(expectedLink)) {
-        errors.push(`docs/workflows.md must link to ${expectedLink}`);
+        errors.push(`${DOCS.recipes.index} must link to ${expectedLink}`);
       }
     }
   }
@@ -96,7 +84,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  process.stdout.write(`Recipe check passed for ${recipeFiles.length} recipes.\n`);
+    process.stdout.write(`Recipe check passed for ${DOCS.recipes.files.length} recipes.\n`);
 }
 
 async function readJson<T>(path: string): Promise<T> {

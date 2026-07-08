@@ -13,13 +13,13 @@ import {
 
 describe('roadmap governance support', () => {
   it('keeps the phase template aligned with required plan headings', async () => {
-    const template = await readFile(resolve(process.cwd(), 'docs/phase-template.md'), 'utf8');
+    const template = await readFile(resolve(process.cwd(), 'docs/governance/templates/phase.md'), 'utf8');
 
     expect(missingRequiredHeadings(template, REQUIRED_PLAN_HEADINGS)).toEqual([]);
   });
 
   it('keeps the implementation note template aligned with required note headings', async () => {
-    const template = await readFile(resolve(process.cwd(), 'docs/implementation-note-template.md'), 'utf8');
+    const template = await readFile(resolve(process.cwd(), 'docs/governance/templates/implementation-note.md'), 'utf8');
 
     expect(missingRequiredHeadings(template, REQUIRED_IMPLEMENTATION_NOTE_HEADINGS)).toEqual([]);
   });
@@ -28,19 +28,19 @@ describe('roadmap governance support', () => {
     const phases = parseImplementationOrder(`
 | Order | Phase | Plan Document | Purpose | Status |
 |---:|---|---|---|---|
-| 17 | Roadmap governance | \`docs/roadmap-governance-plan.md\` | Govern the roadmap. | \`verified\` |
+| 17 | Roadmap governance | \`docs/features/roadmap-governance/plan.md\` | Govern the roadmap. | \`verified\` |
 `);
 
     expect(phases).toEqual([
       {
         order: 17,
         phase: 'Roadmap governance',
-        planDocuments: ['docs/roadmap-governance-plan.md'],
+        planDocuments: ['docs/features/roadmap-governance/plan.md'],
         status: 'verified',
         statuses: ['verified'],
       },
     ]);
-    expect(expectedImplementationNotePath(phases[0])).toBe('docs/roadmap-governance-implementation.md');
+    expect(expectedImplementationNotePath(phases[0])).toBe('docs/features/roadmap-governance/implementation.md');
   });
 
   it('treats no active missing document as no declared next missing document', () => {
@@ -53,7 +53,7 @@ No active phase is missing its required plan document.
 The next proposed phase is:
 
 \`\`\`text
-docs/backlog-prioritization-plan.md
+docs/features/backlog-prioritization/plan.md
 \`\`\`
 `),
     ).toBeNull();
@@ -70,8 +70,8 @@ No active phase is missing its required plan document.
 
 | Order | Phase | Plan Document | Purpose | Status |
 |---:|---|---|---|---|
-| 17 | Roadmap governance | \`docs/roadmap-governance-plan.md\` | Govern the roadmap. | \`verified\` |
-| 18 | Backlog prioritization | \`docs/backlog-prioritization-plan.md\` | Rank candidate work. | \`proposed\` |
+| 17 | Roadmap governance | \`docs/features/roadmap-governance/plan.md\` | Govern the roadmap. | \`verified\` |
+| 18 | Backlog prioritization | \`docs/features/backlog-prioritization/plan.md\` | Rank candidate work. | \`proposed\` |
 `,
       includeImplementationNote: true,
     });
@@ -95,7 +95,7 @@ No active phase is missing its required plan document.
 
 | Order | Phase | Plan Document | Purpose | Status |
 |---:|---|---|---|---|
-| 17 | Roadmap governance | \`docs/roadmap-governance-plan.md\` | Govern the roadmap. | \`implemented\` |
+| 17 | Roadmap governance | \`docs/features/roadmap-governance/plan.md\` | Govern the roadmap. | \`implemented\` |
 `,
       includeImplementationNote: false,
     });
@@ -104,9 +104,32 @@ No active phase is missing its required plan document.
 
     expect(result.errorCount).toBe(1);
     expect(result.issues[0]).toMatchObject({
-      path: 'docs/roadmap-governance-implementation.md',
+      path: 'docs/features/roadmap-governance/implementation.md',
       severity: 'error',
     });
+  });
+
+  it('warns when a phase has an implementation note but a pre-implementation status', async () => {
+    const root = await createRoadmapFixture({
+      implementationOrder: `
+# Implementation Order
+
+## Next Missing Document
+
+No active phase is missing its required plan document.
+
+| Order | Phase | Plan Document | Purpose | Status |
+|---:|---|---|---|---|
+| 17 | Roadmap governance | \`docs/features/roadmap-governance/plan.md\` | Govern the roadmap. | \`delegated\` |
+`,
+      includeImplementationNote: true,
+    });
+
+    const result = await checkRoadmap(root);
+
+    expect(result.errorCount).toBe(0);
+    expect(result.warningCount).toBe(1);
+    expect(result.issues[0]?.message).toContain('does not reflect implemented work');
   });
 });
 
@@ -120,9 +143,9 @@ async function createRoadmapFixture(options: {
 
   await writeFile(join(docsDir, 'implementation-order.md'), options.implementationOrder);
   await writeFile(join(docsDir, 'roadmap-governance.md'), '# Roadmap Governance\n');
-  await writeFile(join(docsDir, 'phase-template.md'), buildDocument('Phase Template', REQUIRED_PLAN_HEADINGS));
+  await writeFile(join(docsDir, 'templates/phase.md'), buildDocument('Phase Template', REQUIRED_PLAN_HEADINGS));
   await writeFile(
-    join(docsDir, 'implementation-note-template.md'),
+    join(docsDir, 'templates/implementation-note.md'),
     buildDocument('Implementation Note Template', REQUIRED_IMPLEMENTATION_NOTE_HEADINGS),
   );
   await writeFile(join(docsDir, 'roadmap-governance-plan.md'), buildDocument('Roadmap Governance Plan', REQUIRED_PLAN_HEADINGS));

@@ -61,7 +61,7 @@ describe('release packaging support', () => {
 
   it('documents every package script in the command reference', async () => {
     const packageJson = JSON.parse(await readFile(resolve(process.cwd(), 'package.json'), 'utf8')) as PackageJson;
-    const commandsDoc = await readFile(resolve(process.cwd(), 'docs/commands.md'), 'utf8');
+    const commandsDoc = await readFile(resolve(process.cwd(), 'docs/reference/commands.md'), 'utf8');
 
     expect(docsIncludeAllScripts(commandsDoc, packageJson)).toEqual([]);
   });
@@ -97,7 +97,7 @@ describe('release packaging support', () => {
     });
 
     await expect(access(join(root, 'dist-package/fetch-trends/dist/src/cli.js'))).resolves.toBeUndefined();
-    await expect(access(join(root, 'dist-package/fetch-trends/docs/install.md'))).resolves.toBeUndefined();
+    await expect(access(join(root, 'dist-package/fetch-trends/docs/reference/install.md'))).resolves.toBeUndefined();
     await expect(access(join(root, 'dist-package/fetch-trends/config/example.env'))).resolves.toBeUndefined();
     await expect(access(join(root, 'dist-package/fetch-trends/docs/report.resume.json'))).rejects.toThrow();
     await expect(access(join(root, 'dist-package/fetch-trends/results/local.csv'))).rejects.toThrow();
@@ -110,7 +110,7 @@ async function createFakeProject(root: string): Promise<void> {
     ['package.json', '{"name":"fetch-trends"}\n'],
     ['package-lock.json', '{"packages":{"":{}}}\n'],
     ['README.md', '# Fetch Trends\n'],
-    ['docs/install.md', '# Install\n'],
+    ['docs/reference/install.md', '# Install\n'],
     ['docs/report.resume.json', '{}\n'],
     ['.codex/skills/micro-business-autocomplete/SKILL.md', '# Skill\n'],
     ['prompts/final-report.md', 'Prompt\n'],

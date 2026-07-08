@@ -26,7 +26,8 @@ tmp/
 artifacts/
 backups/
 exports/
-results/
+results/*
+!results/README.md
 *.sqlite
 *.sqlite-*
 *.db

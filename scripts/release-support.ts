@@ -54,11 +54,11 @@ export const REQUIRED_PACKAGE_SCRIPTS = [
 
 export const REQUIRED_RELEASE_DOCS = [
   'README.md',
-  'docs/architecture.md',
-  'docs/commands.md',
-  'docs/install.md',
-  'docs/release-checklist.md',
-  'docs/release-packaging-plan.md',
+  'docs/reference/architecture.md',
+  'docs/reference/commands.md',
+  'docs/reference/install.md',
+  'docs/reference/release-checklist.md',
+  'docs/features/release-packaging/plan.md',
 ] as const;
 
 export const REQUIRED_PROJECT_SKILLS = [
@@ -239,12 +239,12 @@ export async function collectReleaseVerificationFailures(projectRoot: string): P
     }
   }
 
-  const commandsDocPath = resolve(projectRoot, 'docs/commands.md');
+  const commandsDocPath = resolve(projectRoot, 'docs/reference/commands.md');
   if (await pathExists(commandsDocPath)) {
     const commandsDoc = await readFile(commandsDocPath, 'utf8');
     failures.push(
       ...docsIncludeAllScripts(commandsDoc, packageJson).map(
-        (scriptName) => `docs/commands.md does not document npm run ${scriptName}.`,
+        (scriptName) => `docs/reference/commands.md does not document npm run ${scriptName}.`,
       ),
     );
   }

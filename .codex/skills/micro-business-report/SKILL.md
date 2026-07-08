@@ -17,8 +17,8 @@ Do not expand into a new validation run unless the user asks for it.
 Inspect these first when needed:
 
 1. `README.md`
-2. `docs/architecture.md`
-3. `docs/codex-skills-plan.md`
+2. `docs/reference/architecture.md`
+3. `docs/features/codex-skills/plan.md`
 
 ## Run
 

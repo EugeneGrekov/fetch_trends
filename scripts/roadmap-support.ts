@@ -45,10 +45,10 @@ const ALLOWED_PHASE_STATUS_SET = new Set<string>(ALLOWED_PHASE_STATUSES);
 const IMPLEMENTATION_NOTE_STATUSES = new Set(['implemented', 'verified']);
 const MISSING_PLAN_ALLOWED_STATUSES = new Set(['proposed', 'deferred', 'retired', 'superseded']);
 const REQUIRED_GOVERNANCE_DOCS = [
-  'docs/roadmap-governance.md',
-  'docs/phase-template.md',
-  'docs/implementation-note-template.md',
-  'docs/implementation-order.md',
+  'docs/governance/roadmap-governance.md',
+  'docs/governance/templates/phase.md',
+  'docs/governance/templates/implementation-note.md',
+  'docs/governance/implementation-order.md',
 ] as const;
 
 export interface RoadmapPhase {
@@ -96,26 +96,26 @@ export async function checkRoadmap(projectRoot: string): Promise<RoadmapCheckRes
   await checkRequiredHeadings({
     headings: REQUIRED_PLAN_HEADINGS,
     issues,
-    path: 'docs/phase-template.md',
+    path: 'docs/governance/templates/phase.md',
     projectRoot: root,
     severity: 'error',
   });
   await checkRequiredHeadings({
     headings: REQUIRED_IMPLEMENTATION_NOTE_HEADINGS,
     issues,
-    path: 'docs/implementation-note-template.md',
+    path: 'docs/governance/templates/implementation-note.md',
     projectRoot: root,
     severity: 'error',
   });
 
-  const implementationOrderPath = resolve(root, 'docs/implementation-order.md');
+  const implementationOrderPath = resolve(root, 'docs/governance/implementation-order.md');
   const implementationOrder = await readOptionalFile(implementationOrderPath);
   const phases = implementationOrder ? parseImplementationOrder(implementationOrder) : [];
 
   if (!implementationOrder) {
     issues.push({
-      message: 'docs/implementation-order.md could not be read.',
-      path: 'docs/implementation-order.md',
+      message: 'docs/governance/implementation-order.md could not be read.',
+      path: 'docs/governance/implementation-order.md',
       severity: 'error',
     });
   }
@@ -126,7 +126,7 @@ export async function checkRoadmap(projectRoot: string): Promise<RoadmapCheckRes
     if (phase.statuses.length !== 1 || !ALLOWED_PHASE_STATUS_SET.has(phase.statuses[0] ?? '')) {
       issues.push({
         message: `Phase "${phase.phase}" uses invalid status "${phase.status}".`,
-        path: 'docs/implementation-order.md',
+        path: 'docs/governance/implementation-order.md',
         severity: 'error',
       });
     }
@@ -191,6 +191,15 @@ export async function checkRoadmap(projectRoot: string): Promise<RoadmapCheckRes
           severity: 'error',
         });
       }
+    } else {
+      const implementationNote = expectedImplementationNotePath(phase);
+      if (implementationNote && (await pathExists(resolve(root, implementationNote)))) {
+        issues.push({
+          message: `Phase "${phase.phase}" has implementation note ${implementationNote} but status "${phase.status}" does not reflect implemented work.`,
+          path: 'docs/governance/implementation-order.md',
+          severity: 'warning',
+        });
+      }
     }
   }
 
@@ -200,14 +209,14 @@ export async function checkRoadmap(projectRoot: string): Promise<RoadmapCheckRes
     if (expectedNextMissing && declaredNextMissing !== expectedNextMissing) {
       issues.push({
         message: `Next missing document should be ${expectedNextMissing}, but implementation-order records ${declaredNextMissing ?? 'none'}.`,
-        path: 'docs/implementation-order.md',
+        path: 'docs/governance/implementation-order.md',
         severity: 'warning',
       });
     }
     if (!expectedNextMissing && declaredNextMissing) {
       issues.push({
         message: `Next missing document records ${declaredNextMissing}, but no active phase is missing a plan document.`,
-        path: 'docs/implementation-order.md',
+        path: 'docs/governance/implementation-order.md',
         severity: 'warning',
       });
     }
