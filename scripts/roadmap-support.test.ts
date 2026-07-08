@@ -141,18 +141,23 @@ async function createRoadmapFixture(options: {
   const docsDir = join(root, 'docs');
   await mkdir(docsDir, { recursive: true });
 
-  await writeFile(join(docsDir, 'implementation-order.md'), options.implementationOrder);
-  await writeFile(join(docsDir, 'roadmap-governance.md'), '# Roadmap Governance\n');
-  await writeFile(join(docsDir, 'templates/phase.md'), buildDocument('Phase Template', REQUIRED_PLAN_HEADINGS));
+  await mkdir(join(docsDir, 'features', 'roadmap-governance'), { recursive: true });
+  await mkdir(join(docsDir, 'governance', 'templates'), { recursive: true });
+  await writeFile(join(docsDir, 'governance', 'implementation-order.md'), options.implementationOrder);
+  await writeFile(join(docsDir, 'governance', 'roadmap-governance.md'), '# Roadmap Governance\n');
+  await writeFile(join(docsDir, 'governance', 'templates', 'phase.md'), buildDocument('Phase Template', REQUIRED_PLAN_HEADINGS));
   await writeFile(
-    join(docsDir, 'templates/implementation-note.md'),
+    join(docsDir, 'governance', 'templates', 'implementation-note.md'),
     buildDocument('Implementation Note Template', REQUIRED_IMPLEMENTATION_NOTE_HEADINGS),
   );
-  await writeFile(join(docsDir, 'roadmap-governance-plan.md'), buildDocument('Roadmap Governance Plan', REQUIRED_PLAN_HEADINGS));
+  await writeFile(
+    join(docsDir, 'features', 'roadmap-governance', 'plan.md'),
+    buildDocument('Roadmap Governance Plan', REQUIRED_PLAN_HEADINGS),
+  );
 
   if (options.includeImplementationNote) {
     await writeFile(
-      join(docsDir, 'roadmap-governance-implementation.md'),
+      join(docsDir, 'features', 'roadmap-governance', 'implementation.md'),
       buildDocument('Roadmap Governance Implementation', REQUIRED_IMPLEMENTATION_NOTE_HEADINGS),
     );
   }

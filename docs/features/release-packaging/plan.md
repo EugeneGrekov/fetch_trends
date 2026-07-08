@@ -62,9 +62,9 @@ scripts/
   package-local.ts
 
 docs/
-  install.md
-  commands.md
-  release-checklist.md
+  reference/install.md
+  reference/commands.md
+  reference/release-checklist.md
 
 config/
   example.env

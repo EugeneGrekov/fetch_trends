@@ -188,8 +188,9 @@ prompts/
   final-report.md
 
 docs/
-  global-plan.md
-  architecture.md
+  README.md
+  features/architecture-roadmap/plan.md
+  reference/architecture.md
 
 scripts/
   release-check.ts

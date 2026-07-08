@@ -103,7 +103,7 @@ async function readOptionalFile(path: string): Promise<string | null> {
 }
 
 async function readRecipeReferences(projectRoot: string): Promise<CommandReference[]> {
-  const recipesDir = join(projectRoot, 'docs', 'recipes');
+  const recipesDir = join(projectRoot, DOCS.recipes.root);
   const paths = await listMarkdownFiles(recipesDir);
   const references: CommandReference[] = [];
 

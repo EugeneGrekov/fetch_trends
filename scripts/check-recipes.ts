@@ -54,7 +54,7 @@ async function main(): Promise<void> {
     errors.push('Missing workflow index: docs/recipes/README.md');
   } else {
     const workflowIndex = await readFile(workflowIndexPath, 'utf8');
-    for (const recipeFile of recipeFiles) {
+    for (const recipeFile of DOCS.recipes.files) {
       const expectedLink = `./${recipeFile}`;
       if (!workflowIndex.includes(expectedLink)) {
         errors.push(`${DOCS.recipes.index} must link to ${expectedLink}`);
@@ -84,7 +84,7 @@ async function main(): Promise<void> {
     return;
   }
 
-    process.stdout.write(`Recipe check passed for ${DOCS.recipes.files.length} recipes.\n`);
+  process.stdout.write(`Recipe check passed for ${DOCS.recipes.files.length} recipes.\n`);
 }
 
 async function readJson<T>(path: string): Promise<T> {

@@ -1,6 +1,7 @@
 import { access, constants } from 'node:fs/promises';
 import { cp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { dirname, relative, resolve, sep } from 'node:path';
+import { DOCS } from './docs-paths.js';
 
 export interface PackageJson {
   bin?: Record<string, string> | string;
@@ -54,11 +55,11 @@ export const REQUIRED_PACKAGE_SCRIPTS = [
 
 export const REQUIRED_RELEASE_DOCS = [
   'README.md',
-  'docs/reference/architecture.md',
-  'docs/reference/commands.md',
-  'docs/reference/install.md',
-  'docs/reference/release-checklist.md',
-  'docs/features/release-packaging/plan.md',
+  DOCS.reference.architecture,
+  DOCS.reference.commands,
+  DOCS.reference.install,
+  DOCS.reference.releaseChecklist,
+  DOCS.features.releasePackaging.plan,
 ] as const;
 
 export const REQUIRED_PROJECT_SKILLS = [
@@ -239,12 +240,12 @@ export async function collectReleaseVerificationFailures(projectRoot: string): P
     }
   }
 
-  const commandsDocPath = resolve(projectRoot, 'docs/reference/commands.md');
+  const commandsDocPath = resolve(projectRoot, DOCS.reference.commands);
   if (await pathExists(commandsDocPath)) {
     const commandsDoc = await readFile(commandsDocPath, 'utf8');
     failures.push(
       ...docsIncludeAllScripts(commandsDoc, packageJson).map(
-        (scriptName) => `docs/reference/commands.md does not document npm run ${scriptName}.`,
+        (scriptName) => `${DOCS.reference.commands} does not document npm run ${scriptName}.`,
       ),
     );
   }

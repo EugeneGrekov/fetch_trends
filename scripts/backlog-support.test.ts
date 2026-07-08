@@ -54,10 +54,17 @@ async function createBacklogFixture(options: {
   const root = await mkdtemp(join(tmpdir(), 'fetch-trends-backlog-'));
   const docsDir = join(root, 'docs');
   const backlogDir = join(docsDir, 'backlog');
+  await mkdir(join(docsDir, 'governance', 'templates'), { recursive: true });
   await mkdir(backlogDir, { recursive: true });
 
-  await writeFile(join(docsDir, 'backlog-prioritization.md'), buildDocument('Backlog Prioritization', REQUIRED_BACKLOG_GUIDE_HEADINGS));
-  await writeFile(join(docsDir, 'templates/backlog-item.md'), buildDocument('Backlog Item Template', REQUIRED_BACKLOG_ITEM_HEADINGS));
+  await writeFile(
+    join(docsDir, 'governance', 'backlog-prioritization.md'),
+    buildDocument('Backlog Prioritization', REQUIRED_BACKLOG_GUIDE_HEADINGS),
+  );
+  await writeFile(
+    join(docsDir, 'governance', 'templates', 'backlog-item.md'),
+    buildDocument('Backlog Item Template', REQUIRED_BACKLOG_ITEM_HEADINGS),
+  );
 
   if (options.includeBacklogItem) {
     await writeFile(join(backlogDir, 'example-item.md'), options.backlogItem);

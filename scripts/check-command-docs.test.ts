@@ -33,6 +33,7 @@ describe('command documentation checks', () => {
 
   it('checks project command docs, README examples, and recipes offline', async () => {
     const root = await mkdtemp(join(tmpdir(), 'fetch-trends-command-docs-'));
+    await mkdir(join(root, 'docs', 'reference'), { recursive: true });
     await mkdir(join(root, 'docs', 'recipes'), { recursive: true });
     await writeFile(join(root, 'package.json'), JSON.stringify({
       scripts: {
@@ -42,12 +43,12 @@ describe('command documentation checks', () => {
       },
     }));
     await writeFile(join(root, 'README.md'), 'Run npm run validate, then npm run build.\n');
-    await writeFile(join(root, 'docs', 'commands.md'), [
+    await writeFile(join(root, 'docs', 'reference', 'commands.md'), [
       'npm run build',
       'npm run test',
       'npm run validate',
     ].join('\n'));
-    await writeFile(join(root, 'docs', 'recipes', 'validate.md'), 'Use npm run validate.\n');
+    await writeFile(join(root, 'docs', 'recipes', 'validate-one-idea.md'), 'Use npm run validate.\n');
 
     expect(commandDocsFailures(await checkCommandDocs(root))).toEqual([]);
   });

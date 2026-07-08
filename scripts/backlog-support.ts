@@ -1,6 +1,7 @@
 import { access, constants, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { missingRequiredHeadings } from './roadmap-support.js';
+import { DOCS } from './docs-paths.js';
 
 export const REQUIRED_BACKLOG_GUIDE_HEADINGS = [
   'Purpose',
@@ -57,7 +58,7 @@ export async function checkBacklog(projectRoot: string, options: BacklogCheckOpt
     displayName: 'Backlog prioritization guide',
     headings: REQUIRED_BACKLOG_GUIDE_HEADINGS,
     issues,
-    path: 'docs/governance/backlog-prioritization.md',
+    path: DOCS.governance.backlogPrioritization,
     projectRoot: root,
   });
 
@@ -65,7 +66,7 @@ export async function checkBacklog(projectRoot: string, options: BacklogCheckOpt
     displayName: 'Backlog item template',
     headings: REQUIRED_BACKLOG_ITEM_HEADINGS,
     issues,
-    path: 'docs/governance/templates/backlog-item.md',
+    path: DOCS.governance.templates.backlogItem,
     projectRoot: root,
   });
 

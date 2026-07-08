@@ -9,4 +9,4 @@ Keep command handlers thin:
 - print operator-friendly output
 - return deterministic exit behavior
 
-Update `docs/commands.md` and command-doc tests whenever command options change.
+Update `docs/reference/commands.md` and command-doc tests whenever command options change.

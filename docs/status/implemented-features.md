@@ -7,7 +7,7 @@ This file audits what appears implemented in this checkout as of 2026-07-08.
 The audit is based on:
 
 - `docs/governance/implementation-order.md`
-- implementation notes in `docs/*-implementation.md`
+- implementation notes in `docs/features/*/implementation.md`
 - package scripts and bin entries in `package.json`
 - source modules under `src/`
 - project-local Codex skills under `.codex/skills/`
@@ -27,7 +27,7 @@ The audit is based on:
 | Post-launch measurement | `verified` | `src/measurement/`, `src/commands/measurement.ts`, `npm run measurement`, `docs/features/post-launch-measurement/implementation.md` | Stores experiment events, aggregates metrics, and evaluates thresholds. |
 | Pivot/persevere loop | `verified` | `src/decision-loop/`, `src/commands/decide.ts`, `npm run decide`, `docs/features/pivot-persevere-loop/implementation.md` | Converts measurement and evidence into decision memos and next experiments. |
 | Idea portfolio | `planned` | `docs/features/idea-portfolio/plan.md` | Plan exists, but no portfolio command, schema, or implementation note is present. |
-| Scheduled revalidation | `implemented` | `src/revalidation/`, `src/commands/revalidate.ts`, `npm run revalidate`, `docs/features/scheduled-revalidation/implementation.md` | Code and implementation note exist. Roadmap still needs final verification status if checks pass. |
+| Scheduled revalidation | `verified` | `src/revalidation/`, `src/commands/revalidate.ts`, `npm run revalidate`, `docs/features/scheduled-revalidation/implementation.md` | Scheduled revalidation is implemented and verified. |
 | Data export and backup | `planned` | `docs/features/data-export-and-backup/plan.md` | Plan exists, but no export/backup/restore command or implementation note is present. |
 | Operator diagnostics | `verified` | `src/diagnostics/`, `src/commands/diagnose.ts`, `npm run diagnose`, `docs/features/operator-diagnostics/implementation.md` | Local diagnostics cover config, DB, jobs, collectors, commands, reports, and artifacts. |
 | Release packaging | `verified` | `scripts/package-local.ts`, `scripts/release-check.ts`, `npm run package:local`, `npm run release:check`, `docs/features/release-packaging/implementation.md` | Local package and release checks exist. |
