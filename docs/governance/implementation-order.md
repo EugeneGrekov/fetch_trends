@@ -39,9 +39,9 @@ Use exactly one status per phase. Do not use ad hoc status combinations such as 
 | 7 | Payment test and SEO outputs | `docs/features/payment-test-and-seo/plan.md` | Generate landing page drafts, fake-door/preorder specs, analytics plans, SEO clusters, and thresholds. | `verified` |
 | 8 | Post-launch measurement | `docs/features/post-launch-measurement/plan.md` | Store real validation behavior and compare results against thresholds. | `verified` |
 | 9 | Pivot/persevere loop | `docs/features/pivot-persevere-loop/plan.md` | Turn measurement reports into repeatable pivot, persevere, validate deeper, or kill workflows. | `verified` |
-| 10 | Idea portfolio | `docs/features/idea-portfolio/plan.md` | Compare multiple ideas by evidence strength, risk, cost to test, and best next action. | `planned` |
+| 10 | Idea portfolio | `docs/features/idea-portfolio/plan.md` | Compare multiple ideas by evidence strength, risk, cost to test, and best next action. | `verified` |
 | 11 | Scheduled revalidation | `docs/features/scheduled-revalidation/plan.md` | Detect stale evidence, periodically re-run validation jobs, and queue follow-up work. | `verified` |
-| 12 | Data export and backup | `docs/features/data-export-and-backup/plan.md` | Export, archive, back up, and restore local validation evidence and reports. | `planned` |
+| 12 | Data export and backup | `docs/features/data-export-and-backup/plan.md` | Export, archive, back up, and restore local validation evidence and reports. | `verified` |
 | 13 | Operator diagnostics | `docs/features/operator-diagnostics/plan.md` | Inspect configuration, failed jobs, DB health, collector availability, and artifact integrity. | `verified` |
 | 14 | Release packaging | `docs/features/release-packaging/plan.md` | Make the CLI, web app, skills, docs, and migrations easier to install, run, verify, and distribute. | `verified` |
 | 15 | Workflow recipes | `docs/features/workflow-recipes/plan.md` | Document common end-to-end workflows for validation, portfolio review, payment tests, revalidation, and backup. | `verified` |

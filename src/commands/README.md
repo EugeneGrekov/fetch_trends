@@ -10,3 +10,5 @@ Keep command handlers thin:
 - return deterministic exit behavior
 
 Update `docs/reference/commands.md` and command-doc tests whenever command options change.
+
+Current command handlers include `export-data`, `backup`, and `restore` alongside the existing validation, reporting, and maintenance commands.

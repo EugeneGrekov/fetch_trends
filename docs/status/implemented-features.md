@@ -26,9 +26,9 @@ The audit is based on:
 | Payment test and SEO outputs | `verified` | `src/payment-test.ts`, `src/seo-plan.ts`, `src/validation/payment-test-generator.ts`, `src/validation/seo-plan-generator.ts`, `docs/features/payment-test-and-seo/implementation.md` | Generates evidence-backed fake-door/payment-test and SEO planning artifacts. |
 | Post-launch measurement | `verified` | `src/measurement/`, `src/commands/measurement.ts`, `npm run measurement`, `docs/features/post-launch-measurement/implementation.md` | Stores experiment events, aggregates metrics, and evaluates thresholds. |
 | Pivot/persevere loop | `verified` | `src/decision-loop/`, `src/commands/decide.ts`, `npm run decide`, `docs/features/pivot-persevere-loop/implementation.md` | Converts measurement and evidence into decision memos and next experiments. |
-| Idea portfolio | `planned` | `docs/features/idea-portfolio/plan.md` | Plan exists, but no portfolio command, schema, or implementation note is present. |
+| Idea portfolio | `verified` | `src/portfolio/`, `src/commands/portfolio.ts`, `docs/features/idea-portfolio/implementation.md` | Local portfolio comparison ranks ideas by evidence quality, risk, cost to test, and next action. |
 | Scheduled revalidation | `verified` | `src/revalidation/`, `src/commands/revalidate.ts`, `npm run revalidate`, `docs/features/scheduled-revalidation/implementation.md` | Scheduled revalidation is implemented and verified. |
-| Data export and backup | `planned` | `docs/features/data-export-and-backup/plan.md` | Plan exists, but no export/backup/restore command or implementation note is present. |
+| Data export and backup | `verified` | `src/export/`, `src/commands/export-data.ts`, `src/commands/backup.ts`, `src/commands/restore.ts`, `docs/features/data-export-and-backup/implementation.md` | Local exports, backups, and restores work with manifest validation and optional redaction. |
 | Operator diagnostics | `verified` | `src/diagnostics/`, `src/commands/diagnose.ts`, `npm run diagnose`, `docs/features/operator-diagnostics/implementation.md` | Local diagnostics cover config, DB, jobs, collectors, commands, reports, and artifacts. |
 | Release packaging | `verified` | `scripts/package-local.ts`, `scripts/release-check.ts`, `npm run package:local`, `npm run release:check`, `docs/features/release-packaging/implementation.md` | Local package and release checks exist. |
 | Workflow recipes | `verified` | `docs/recipes/README.md`, `docs/recipes/`, `scripts/check-recipes.ts`, `docs/features/workflow-recipes/implementation.md` | Common operating flows are documented and checked. |
@@ -49,6 +49,10 @@ The current command surface in `package.json` includes:
 - `npm run measurement`
 - `npm run decide`
 - `npm run revalidate`
+- `npm run portfolio`
+- `npm run export-data`
+- `npm run backup`
+- `npm run restore`
 - `npm run diagnose`
 - `npm run web`
 - `npm run worker`
@@ -59,8 +63,7 @@ The current command surface in `package.json` includes:
 
 ## Main Gaps
 
-- `idea portfolio` is planned but not implemented.
-- `data export and backup` is planned but not implemented.
-- `scheduled revalidation` is implemented but still marked `implemented`, not `verified`, in `docs/governance/implementation-order.md`.
-- Some diagnostics and release checks intentionally skip export/backup behavior until that phase exists.
+- `idea portfolio` is implemented as a local CLI comparison workflow.
+- `data export and backup` is implemented but still needs broader release/doc verification.
+- Some diagnostics and release checks may still need explicit verification for the new export/backup command surface.
 - Generated `results/`, `artifacts/`, `exports/`, `backups/`, and SQLite files are ignored and should not be treated as source documentation.

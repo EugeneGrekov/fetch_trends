@@ -38,6 +38,8 @@ The project should already support:
 - Export/backup.
 - Documentation for major phases.
 
+Release verification should treat `portfolio`, `export-data`, `backup`, and `restore` as part of the command surface as soon as they appear in `package.json`.
+
 ## Non-Goals
 
 Do not add these in this phase:

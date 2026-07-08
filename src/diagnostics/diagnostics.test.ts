@@ -11,6 +11,7 @@ import { createReport } from '../db/repositories/reports.js';
 import { createToolRun, failToolRun } from '../db/repositories/tool-runs.js';
 import { checkArtifactHealth } from './artifact-health.js';
 import { checkCollectorHealth } from './collector-health.js';
+import { checkCommandHealth } from './command-health.js';
 import { checkConfiguration } from './config-check.js';
 import { checkDatabaseHealth } from './db-health.js';
 import { checkJobHealth } from './job-health.js';
@@ -202,6 +203,71 @@ describe('operator diagnostics', () => {
     expect(findCheck(checks, 'collectors.autocomplete').status).toBe('pass');
     expect(findCheck(checks, 'collectors.serp').status).toBe('warn');
     expect(findCheck(checks, 'collectors.live').message).toContain('no external calls were made');
+  });
+
+  it('fails command diagnostics when the command reference or bins are missing', async () => {
+    const dir = await createTempDir();
+    await mkdir(join(dir, 'docs', 'reference'), { recursive: true });
+    await writeFile(join(dir, 'package.json'), JSON.stringify({
+      bin: {
+        'fetch-trends-diagnose': './dist/src/diagnose.js',
+        'fetch-trends-portfolio': './dist/src/commands/portfolio.js',
+      },
+      scripts: {
+        diagnose: 'tsx src/commands/diagnose.ts',
+        portfolio: 'tsx src/commands/portfolio.ts',
+      },
+    }));
+    await writeFile(join(dir, 'docs', 'reference', 'commands.md'), [
+      '# Command Reference',
+      '',
+      'Run npm run diagnose.',
+    ].join('\n'));
+
+    const checks = await checkCommandHealth(createDiagnosticContext({
+      cwd: dir,
+      dbPath: join(dir, 'unused.sqlite'),
+      env: {
+        PATH: '',
+      },
+      generatedAt: NOW,
+    }));
+
+    expect(findCheck(checks, 'commands.docs.reference').status).toBe('pass');
+    expect(findCheck(checks, 'commands.docs.portfolio').status).toBe('fail');
+    expect(findCheck(checks, 'commands.bin.portfolio').status).toBe('pass');
+  });
+
+  it('fails command diagnostics when a roadmap command is added without a bin entry', async () => {
+    const dir = await createTempDir();
+    await mkdir(join(dir, 'docs', 'reference'), { recursive: true });
+    await writeFile(join(dir, 'package.json'), JSON.stringify({
+      bin: {
+        'fetch-trends-diagnose': './dist/src/diagnose.js',
+      },
+      scripts: {
+        diagnose: 'tsx src/commands/diagnose.ts',
+        'export-data': 'tsx src/commands/export-data.ts',
+      },
+    }));
+    await writeFile(join(dir, 'docs', 'reference', 'commands.md'), [
+      '# Command Reference',
+      '',
+      'Run npm run diagnose.',
+      'Run npm run export-data.',
+    ].join('\n'));
+
+    const checks = await checkCommandHealth(createDiagnosticContext({
+      cwd: dir,
+      dbPath: join(dir, 'unused.sqlite'),
+      env: {
+        PATH: '',
+      },
+      generatedAt: NOW,
+    }));
+
+    expect(findCheck(checks, 'commands.script.export-data').status).toBe('pass');
+    expect(findCheck(checks, 'commands.bin.export-data').status).toBe('fail');
   });
 
   it('reports missing and orphan artifact files using temp directories', async () => {

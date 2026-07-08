@@ -6,12 +6,15 @@ Implemented local release packaging support for installing, documenting, verifyi
 
 The release check now validates tests, build, lint, temp SQLite migrations, diagnostics when available, package bin paths, required docs, local Codex skills, example env safety, and package inclusion rules.
 
+The command-health checks now treat `portfolio`, `export-data`, `backup`, and `restore` as part of the release surface when those scripts exist.
+
 ## Files/Modules Added Or Changed
 
 - Added `scripts/release-support.ts` with shared release verification and package-copy helpers.
 - Added `scripts/release-check.ts` for `npm run release:check`.
 - Added `scripts/package-local.ts` for `npm run package:local`.
 - Added `scripts/release-support.test.ts` for offline release/package tests.
+- Updated command-doc and diagnostics checks for the planned portfolio/export/backup/restore surface.
 - Added `docs/reference/install.md`.
 - Added `docs/reference/commands.md`.
 - Added `docs/reference/release-checklist.md`.

@@ -68,8 +68,20 @@ src/
     validate.ts
     report.ts
     db.ts
+    export-data.ts
+    backup.ts
+    restore.ts
     web.ts
     worker.ts
+    portfolio.ts
+
+  export/
+    bundle-writer.ts
+    bundle-reader.ts
+    backup.ts
+    restore.ts
+    redaction.ts
+    types.ts
     measurement.ts
     decide.ts
     revalidate.ts
@@ -80,6 +92,13 @@ src/
     learning-history.ts
     next-experiment.ts
     pivot-generator.ts
+    types.ts
+
+  portfolio/
+    comparison-report.ts
+    portfolio-loader.ts
+    portfolio-ranker.ts
+    portfolio-scorer.ts
     types.ts
 
   revalidation/
@@ -231,6 +250,10 @@ Commands:
 | `measurement` | Import local experiment events, evaluate thresholds, and persist measurement reports. |
 | `decide` | Turn stored validation and measurement evidence into one decision memo and next action. |
 | `revalidate` | Scan for stale evidence, queue local revalidation tasks, run pending tasks, and persist refreshed score/report snapshots. |
+| `portfolio` | Compare multiple stored ideas by evidence strength, risk, cost to test, and next action. |
+| `export-data` | Export one idea bundle or a portfolio summary from local SQLite data. |
+| `backup` | Create a timestamped local backup of the SQLite database and selected artifact directories. |
+| `restore` | Restore a verified local backup into a target SQLite database and optional artifact directories. |
 | `diagnose` | Run local operator diagnostics for configuration, DB, jobs, collectors, artifacts, and commands. |
 | `db` | Migration and database inspection tasks. |
 | `web` | Start local web interface. |
@@ -256,6 +279,23 @@ They should:
 - Be usable from CLI, orchestrator, tests, and Codex skills.
 - Store output only when called by a persistence-aware layer.
 
+### 4.3 Export And Backup
+
+Export and backup helpers are a local filesystem boundary over SQLite-backed evidence and generated artifacts.
+
+Responsibilities:
+
+- Build deterministic idea and portfolio export bundles from SQLite rows.
+- Apply optional redaction for sharing exports.
+- Copy database and artifact directories into timestamped backup folders.
+- Validate backup manifests before restoring into explicit target paths.
+
+Rules:
+
+- Export bundles stay local-first and should not require live services.
+- Backup and restore must be deterministic and refuse unsafe overwrites unless explicitly forced.
+- ZIP packaging may be added later, but JSON and Markdown exports are the first supported formats.
+
 Example:
 
 ```text
@@ -264,7 +304,7 @@ Autocomplete utility
   output: generated prefixes, predictions, summary, errors
 ```
 
-### 4.3 Validation Orchestrator
+### 4.4 Validation Orchestrator
 
 The orchestrator coordinates a validation job.
 
@@ -280,7 +320,7 @@ Responsibilities:
 
 The orchestrator should not contain collector-specific logic. It should call utility adapters.
 
-### 4.4 SQLite Layer
+### 4.5 SQLite Layer
 
 SQLite is the local source of truth.
 
@@ -299,7 +339,7 @@ Rules:
 - Store enough metadata to reproduce a report.
 - Keep AI-generated conclusions separate from raw evidence.
 
-### 4.5 AI Runner
+### 4.6 AI Runner
 
 The AI runner is responsible for bounded model calls.
 
@@ -329,7 +369,7 @@ codex exec \
   -
 ```
 
-### 4.6 Web UI
+### 4.7 Web UI
 
 The web UI is a local dashboard over the same SQLite-backed pipeline.
 
@@ -354,7 +394,7 @@ Current implementation:
 - Routes render server-side HTML and expose small JSON APIs for polling.
 - Report export reads stored `reports` rows as markdown or JSON.
 
-### 4.7 Decision Loop
+### 4.8 Decision Loop
 
 The decision loop is the idea-level operating layer over validation and measurement records.
 
@@ -374,7 +414,26 @@ Rules:
 - The decision loop does not collect new evidence, process payments, or compare a portfolio of ideas.
 - AI may draft narrative later, but deterministic decision values remain the source of truth.
 
-### 4.8 Operator Diagnostics
+### 4.9 Portfolio Comparison
+
+Portfolio comparison is the local cross-idea ranking layer over stored validation, measurement, and decision records.
+
+Responsibilities:
+
+- Load multiple ideas and their latest evidence snapshots from SQLite.
+- Rank ideas by evidence quality, payment signal strength, risk, recency, and next-action clarity.
+- Surface practical buckets: `test_next`, `validate_deeper`, `watch`, `park`, and `kill`.
+- Keep kill rules visible so the aggregate score does not hide them.
+- Generate a stored comparison report plus Markdown and JSON artifacts.
+
+Rules:
+
+- The portfolio score is separate from validation, measurement, and decision scores.
+- Missing proof lowers confidence instead of being ignored.
+- The comparison layer does not call live external services.
+- Optional web dashboard support may be added later, but CLI/report coverage is the first-class implementation.
+
+### 4.10 Operator Diagnostics
 
 Operator diagnostics are a read-only local inspection layer over the CLI, SQLite database, collector configuration, artifacts, and package scripts.
 
@@ -394,7 +453,7 @@ Rules:
 - Do not call live external services by default.
 - Live diagnostics must remain explicitly opt-in and must not be used by default tests.
 
-### 4.9 Codex Skills
+### 4.11 Codex Skills
 
 Codex skills are agent-facing wrappers around local tools.
 
@@ -413,7 +472,7 @@ They should not:
 - Be required by the web UI.
 - Become the only way to run validation.
 
-### 4.9 Scheduled Revalidation
+### 4.12 Scheduled Revalidation
 
 Scheduled revalidation is the local maintenance layer for validation evidence.
 
@@ -431,9 +490,9 @@ Rules:
 - Historical evidence is never overwritten.
 - Measurement events and decisions are historical facts. They are not automatically stale, though later snapshots can supersede earlier interpretations.
 - Revalidation is local and explicit. There is no daemon or cloud scheduler in the first implementation.
-- Portfolio refresh is represented as a queue task marker until portfolio ranking exists in code.
+- Portfolio refresh can now reference the portfolio comparison workflow instead of a placeholder marker.
 
-### 4.10 Release Packaging
+### 4.13 Release Packaging
 
 Release packaging is the local verification and handoff layer.
 
@@ -452,7 +511,7 @@ Rules:
 - Package outputs must not include SQLite DBs, `results/`, `artifacts/`, backups, exports, `.env` files, logs, or resume files.
 - `diagnose` is optional in release checks until the diagnostics command is wired into `package.json`; missing diagnostics should produce a warning, not a false pass.
 
-### 4.11 Roadmap Governance
+### 4.13 Roadmap Governance
 
 Roadmap governance is the local process layer for phase sequencing, verification, documentation, and retirement.
 
@@ -469,7 +528,7 @@ Rules:
 - `npm run roadmap:check` is a documentation and process check only.
 - New phases after roadmap governance should be created from templates and retired explicitly when they no longer fit the evidence-first local flow.
 
-### 4.12 Backlog Prioritization
+### 4.14 Backlog Prioritization
 
 Backlog prioritization is the local decision layer for ranking candidate work
 before it becomes a planned implementation phase.

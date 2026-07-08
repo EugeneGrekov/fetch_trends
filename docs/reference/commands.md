@@ -108,14 +108,45 @@ Default tests and release checks must not call live external APIs, payment provi
 - SQLite writes: yes.
 - File outputs: yes when run-pending writes refresh artifacts.
 
-### Planned Maintenance Commands
+### `npm run portfolio`
 
-These commands are part of adjacent plans but are not required by the release packaging implementation unless they appear in `package.json`:
+- Purpose: compare multiple stored ideas by evidence strength, risk, cost to test, and next action.
+- Example: `npm run portfolio -- --limit 10 --outDir ./artifacts/portfolio`
+- Inputs: optional `--db`, optional `--outDir`, optional `--status`, optional `--limit`, and `--include-killed`.
+- Outputs: portfolio comparison markdown/JSON artifacts and a stored `portfolio_comparison` report.
+- Live services: no.
+- SQLite writes: yes.
+- File outputs: yes, defaulting to `./artifacts/portfolio`.
 
-- `npm run export-data`: planned data export.
-- `npm run backup`: planned local backup.
-- `npm run restore`: planned local restore.
-- `npm run portfolio`: planned portfolio ranking.
+### `npm run export-data`
+
+- Purpose: export one idea bundle or a portfolio summary from local SQLite data.
+- Example: `npm run export-data -- --idea-id 1 --format json --out ./exports/idea-1.json`
+- Inputs: `--idea-id` or `--portfolio`, `--format json|markdown`, `--out`, `--redaction none|basic|strict`, optional `--db`, optional `--limit`, optional `--artifacts-root`.
+- Outputs: JSON or Markdown export bundle files or stdout.
+- Live services: no.
+- SQLite writes: no, but the command applies pending migrations before reading.
+- File outputs: yes when `--out` is passed.
+
+### `npm run backup`
+
+- Purpose: create a timestamped local backup of the SQLite database and selected artifact directories.
+- Example: `npm run backup -- --out ./backups`
+- Inputs: optional `--db`, `--out`, `--artifacts-dir`, `--reports-dir`, and `--timestamp`.
+- Outputs: backup directory with copied database, copied artifacts, and `manifest.json`.
+- Live services: no.
+- SQLite writes: no, but the command reads the local DB file.
+- File outputs: yes.
+
+### `npm run restore`
+
+- Purpose: restore a verified local backup into a target SQLite database and optional artifact directories.
+- Example: `npm run restore -- --backup ./backups/fetch-trends-2026-07-07T120000Z --target-db ./data/restored.sqlite`
+- Inputs: `--backup`, `--target-db`, optional `--target-artifacts-dir`, optional `--target-reports-dir`, and `--force`.
+- Outputs: restored database and optional restored artifact directories.
+- Live services: no.
+- SQLite writes: yes, to the explicit target DB when restoration succeeds.
+- File outputs: yes, to the explicit target paths.
 
 ### `npm run diagnose`
 

@@ -53,6 +53,29 @@ describe('command documentation checks', () => {
     expect(commandDocsFailures(await checkCommandDocs(root))).toEqual([]);
   });
 
+  it('fails when the command reference document is missing', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'fetch-trends-command-docs-missing-'));
+    await mkdir(join(root, 'docs', 'recipes'), { recursive: true });
+    await writeFile(join(root, 'package.json'), JSON.stringify({
+      scripts: {
+        build: 'tsc -p tsconfig.json',
+        test: 'vitest --run',
+      },
+    }));
+    await writeFile(join(root, 'README.md'), 'Run npm run build.\n');
+    await writeFile(join(root, 'docs', 'recipes', 'validate-one-idea.md'), 'Use npm run build.\n');
+
+    const result = await checkCommandDocs(root);
+
+    expect(result.warnings).toEqual([
+      'docs/reference/commands.md is missing; command reference coverage could not be verified.',
+    ]);
+    expect(commandDocsFailures(result)).toEqual([
+      'docs/reference/commands.md does not document npm run build.',
+      'docs/reference/commands.md does not document npm run test.',
+    ]);
+  });
+
   it('keeps the current README and optional command docs aligned with package scripts', async () => {
     const result = await checkCommandDocs(process.cwd());
 

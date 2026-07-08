@@ -4,8 +4,8 @@ Comparative ranking for multiple validated ideas.
 
 ## Contents
 - Plan: [plan.md](plan.md)
-- Implementation: pending
-- Source area: src/validation/ and src/decision-loop/
+- Implementation: [implementation.md](implementation.md)
+- Source area: src/portfolio/ and src/commands/portfolio.ts
 - Previous phase: [Pivot Persevere Loop](../pivot-persevere-loop/README.md)
 - Next phase: [Scheduled Revalidation](../scheduled-revalidation/README.md)
 

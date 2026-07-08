@@ -29,11 +29,11 @@ export async function checkCommandDocs(projectRoot: string): Promise<CommandDocs
   const commandsDocPath = resolve(root, DOCS.reference.commands);
   const commandsDoc = await readOptionalFile(commandsDocPath);
   const missingCommandReferenceScripts = commandsDoc == null
-    ? []
+    ? Object.keys(packageJson.scripts ?? {}).sort()
     : missingDocumentedScripts(commandsDoc, scripts);
 
   if (commandsDoc == null) {
-    warnings.push(`${DOCS.reference.commands} is missing; command reference coverage was skipped.`);
+    warnings.push(`${DOCS.reference.commands} is missing; command reference coverage could not be verified.`);
   }
 
   const readmeReferences = extractNpmRunReferences(

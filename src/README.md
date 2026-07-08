@@ -12,6 +12,7 @@ Main areas:
 - `measurement/` stores and evaluates experiment behavior.
 - `decision-loop/` produces pivot, persevere, kill, or validate-deeper recommendations.
 - `revalidation/` detects stale evidence and queues follow-up work.
+- `export/` assembles local export bundles and backup/restore helpers.
 - `diagnostics/` checks local setup health.
 - `web/` serves the local interface.
 - `testing/` provides deterministic fixtures and fakes.
