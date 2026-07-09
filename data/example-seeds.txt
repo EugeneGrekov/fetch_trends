@@ -1,5 +1,0 @@
-find my parked car
-app that remembers where I parked
-automatic parking location app
-Bluetooth parking location app Android
-find parked car without opening app

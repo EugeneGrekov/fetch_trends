@@ -47,3 +47,4 @@ prompts/JUNK*
 *JUNK*
 .env*
 supabase/.temp
+data
