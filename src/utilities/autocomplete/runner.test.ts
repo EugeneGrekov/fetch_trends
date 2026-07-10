@@ -78,6 +78,26 @@ describe('autocomplete runner', () => {
     expect(report.inputSeeds).toEqual(['parking reminder app']);
     expect(report.finalSummary.completedPrefixCount).toBe(1);
   });
+
+  it('retries failed prefixes when resuming after a transient collector error', async () => {
+    const dir = await createTempDir();
+    const out = join(dir, 'parking.csv');
+
+    const firstCollector = new FlakyCollector(true);
+    const firstReport = await runAutocompleteResearch(options({ out, maxPrefixes: 1 }), firstCollector);
+
+    expect(firstCollector.calls).toEqual(['find my parked car']);
+    expect(firstReport.finalSummary.completedPrefixCount).toBe(0);
+    expect(firstReport.finalSummary.errorCount).toBe(1);
+
+    const secondCollector = new FlakyCollector(false);
+    const secondReport = await runAutocompleteResearch(options({ out, maxPrefixes: 1 }), secondCollector);
+
+    expect(secondCollector.calls).toEqual(['find my parked car']);
+    expect(secondReport.finalSummary.completedPrefixCount).toBe(1);
+    expect(secondReport.finalSummary.errorCount).toBe(0);
+    expect(secondReport.finalSummary.predictionCount).toBeGreaterThan(0);
+  });
 });
 
 class FakeCollector implements AutocompleteCollector {
@@ -90,6 +110,26 @@ class FakeCollector implements AutocompleteCollector {
       `${prefix} bluetooth android`,
       'find my parked car app',
     ];
+  }
+
+  async close(): Promise<void> {
+    return undefined;
+  }
+}
+
+class FlakyCollector implements AutocompleteCollector {
+  calls: string[] = [];
+
+  constructor(private readonly fail: boolean) {}
+
+  async collect(prefix: string, _context: CollectContext): Promise<string[]> {
+    this.calls.push(prefix);
+
+    if (this.fail) {
+      throw new Error('browserType.launch: Executable does not exist');
+    }
+
+    return [`${prefix} app`, `${prefix} chrome extension`];
   }
 
   async close(): Promise<void> {

@@ -48,3 +48,4 @@ prompts/JUNK*
 .env*
 supabase/.temp
 data
+results

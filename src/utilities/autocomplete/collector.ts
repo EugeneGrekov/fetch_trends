@@ -1,3 +1,6 @@
+import { access, readdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import type { AutocompleteCollector, CollectContext } from './types.js';
 
@@ -49,7 +52,7 @@ export class PlaywrightAutocompleteCollector implements AutocompleteCollector {
       return this.page;
     }
 
-    this.browser = await chromium.launch({ headless: this.headless });
+    this.browser = await launchChromiumWithFallback(this.headless);
     this.context = await this.browser.newContext({
       locale: `${context.language}-${context.country}`,
       userAgent:
@@ -68,6 +71,150 @@ export class PlaywrightAutocompleteCollector implements AutocompleteCollector {
     await focusSearchBox(this.page);
 
     return this.page;
+  }
+}
+
+async function launchChromiumWithFallback(headless: boolean): Promise<Browser> {
+  try {
+    return await chromium.launch({ headless });
+  } catch (error) {
+    if (!isMissingExecutableError(error)) {
+      throw error;
+    }
+
+    const executablePath = await resolveFallbackExecutablePath(headless);
+    if (!executablePath) {
+      throw error;
+    }
+
+    return chromium.launch({ executablePath, headless });
+  }
+}
+
+function isMissingExecutableError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("Executable doesn't exist");
+}
+
+export async function resolveFallbackExecutablePath(headless: boolean): Promise<string | undefined> {
+  const explicitPath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+  if (explicitPath && (await pathExists(explicitPath))) {
+    return explicitPath;
+  }
+
+  const cacheRoot = resolvePlaywrightCacheRoot();
+  if (!cacheRoot) {
+    return undefined;
+  }
+
+  const directoryEntries = await readdir(cacheRoot, { withFileTypes: true }).catch(() => []);
+  const revisions = directoryEntries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .map(parseInstalledRevision)
+    .filter((entry): entry is InstalledRevision => Boolean(entry))
+    .sort((left, right) => right.revision - left.revision);
+
+  for (const entry of revisions) {
+    const relativePaths = getExecutableRelativePaths(entry.kind, headless);
+    for (const relativePath of relativePaths) {
+      const executablePath = join(cacheRoot, entry.directoryName, relativePath);
+      if (await pathExists(executablePath)) {
+        return executablePath;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+interface InstalledRevision {
+  directoryName: string;
+  kind: 'chromium' | 'chromium_headless_shell';
+  revision: number;
+}
+
+function parseInstalledRevision(directoryName: string): InstalledRevision | undefined {
+  const match = /^(chromium|chromium_headless_shell)-(\d+)$/.exec(directoryName);
+  if (!match) {
+    return undefined;
+  }
+
+  return {
+    directoryName,
+    kind: match[1] as InstalledRevision['kind'],
+    revision: Number(match[2]),
+  };
+}
+
+function resolvePlaywrightCacheRoot(): string | undefined {
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH && process.env.PLAYWRIGHT_BROWSERS_PATH !== '0') {
+    return process.env.PLAYWRIGHT_BROWSERS_PATH;
+  }
+
+  if (process.platform === 'darwin') {
+    return join(homedir(), 'Library', 'Caches', 'ms-playwright');
+  }
+
+  if (process.platform === 'linux') {
+    return join(homedir(), '.cache', 'ms-playwright');
+  }
+
+  if (process.platform === 'win32') {
+    return join(homedir(), 'AppData', 'Local', 'ms-playwright');
+  }
+
+  return undefined;
+}
+
+function getExecutableRelativePaths(
+  kind: InstalledRevision['kind'],
+  headless: boolean,
+): string[] {
+  const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+
+  if (process.platform === 'darwin') {
+    const fullBrowser = `chrome-mac-${arch}/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+    const headlessShell = `chrome-headless-shell-mac-${arch}/chrome-headless-shell`;
+
+    if (headless) {
+      return kind === 'chromium_headless_shell' ? [headlessShell, fullBrowser] : [fullBrowser];
+    }
+
+    return kind === 'chromium' ? [fullBrowser] : [];
+  }
+
+  if (process.platform === 'linux') {
+    const fullBrowser = `chrome-linux/chrome`;
+    const headlessShell = `chrome-headless-shell-linux64/chrome-headless-shell`;
+
+    if (headless) {
+      return kind === 'chromium_headless_shell' ? [headlessShell, fullBrowser] : [fullBrowser];
+    }
+
+    return kind === 'chromium' ? [fullBrowser] : [];
+  }
+
+  if (process.platform === 'win32') {
+    const fullBrowser = `chrome-win/chrome.exe`;
+    const headlessShell = `chrome-headless-shell-win64/chrome-headless-shell.exe`;
+
+    if (headless) {
+      return kind === 'chromium_headless_shell' ? [headlessShell, fullBrowser] : [fullBrowser];
+    }
+
+    return kind === 'chromium' ? [fullBrowser] : [];
+  }
+
+  return [];
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
   }
 }
 

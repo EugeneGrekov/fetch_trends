@@ -71,7 +71,9 @@ export async function runAutocompleteResearch(
 
 async function createInitialState(options: RunOptions): Promise<MutableRunState> {
   const resumeState = options.resume ? await loadResumeState(options.out) : undefined;
-  const resumed = resumeState && isCompatibleResume(resumeState, options) ? resumeState : undefined;
+  const resumed = resumeState && isCompatibleResume(resumeState, options)
+    ? prepareResumeStateForRetry(resumeState)
+    : undefined;
   const startedAt = resumed?.runMetadata.startedAt ?? new Date().toISOString();
 
   return {
@@ -85,12 +87,13 @@ async function createInitialState(options: RunOptions): Promise<MutableRunState>
       maxDepth2Prefixes: options.maxDepth2Prefixes,
       resume: options.resume,
       outputPath: options.out,
+      completedAt: undefined,
     },
     inputSeeds: options.seeds,
     completedPrefixes: resumed?.completedPrefixes ?? [],
     generatedPrefixes: resumed?.generatedPrefixes ?? [],
     collectedPredictions: resumed?.collectedPredictions ?? [],
-    perSeedSummaries: resumed?.perSeedSummaries ?? [],
+    perSeedSummaries: [],
     errors: resumed?.errors ?? [],
     stopped: false,
   };
@@ -107,6 +110,40 @@ function isCompatibleResume(state: ResumeState, options: RunOptions): boolean {
     state.runMetadata.language === options.language &&
     state.runMetadata.depth <= options.depth
   );
+}
+
+function prepareResumeStateForRetry(state: ResumeState): ResumeState {
+  const retryablePrefixKeys = new Set(
+    state.errors
+      .map(errorToPrefixKey)
+      .filter((key): key is string => Boolean(key)),
+  );
+
+  return {
+    ...state,
+    runMetadata: {
+      ...state.runMetadata,
+      completedAt: undefined,
+      stoppedReason: undefined,
+    },
+    completedPrefixes: state.completedPrefixes.filter(
+      (prefix) => !retryablePrefixKeys.has(prefixKey(prefix)),
+    ),
+    perSeedSummaries: [],
+    errors: state.errors.filter((error) => !errorToPrefixKey(error)),
+  };
+}
+
+function errorToPrefixKey(error: RunError): string | undefined {
+  if (error.code !== 'PREFIX_FAILED' || !error.seed || !error.prefix || !error.depth) {
+    return undefined;
+  }
+
+  return prefixKey({
+    seed: error.seed,
+    prefix: error.prefix,
+    depth: error.depth,
+  });
 }
 
 async function processSeed(args: {
@@ -225,8 +262,6 @@ async function processPrefixes(args: {
         message: error instanceof Error ? error.message : String(error),
         code: 'PREFIX_FAILED',
       });
-      state.completedPrefixes.push(prefix);
-      completedPrefixKeys.add(prefixKey(prefix));
       hadPrefixFailure = true;
       emitProgress(seed, seedIndex, prefixes, options, state, progress);
       await saveState(state, options.out);
