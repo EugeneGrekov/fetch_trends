@@ -6,13 +6,23 @@ import { DEFAULT_MODIFIERS } from './constants.js';
 import { normalizeQuery, normalizeSpaces } from './normalize.js';
 
 export async function loadSeeds(inlineSeeds: string[], seedPaths: string[]): Promise<string[]> {
+  return loadSeedsWithOptions(inlineSeeds, seedPaths);
+}
+
+export async function loadSeedsWithOptions(
+  inlineSeeds: string[],
+  seedPaths: string[],
+  options: { readStdin?: () => Promise<string>; stdinIsTTY?: boolean } = {},
+): Promise<string[]> {
   const rawSeeds = [...inlineSeeds];
+  const readStdinFn = options.readStdin ?? readStdin;
+  const stdinIsTTY = options.stdinIsTTY ?? stdin.isTTY;
   let stdinCache: string | undefined;
 
   for (const seedPath of seedPaths) {
     if (seedPath === '-') {
-      stdinCache ??= await readStdin();
-      rawSeeds.push(...parseTxt(stdinCache));
+      stdinCache ??= await readStdinFn();
+      rawSeeds.push(...parseSeedInput(stdinCache));
       continue;
     }
 
@@ -24,6 +34,11 @@ export async function loadSeeds(inlineSeeds: string[], seedPaths: string[]): Pro
     } else {
       rawSeeds.push(...parseTxt(content));
     }
+  }
+
+  if (rawSeeds.length === 0 && !stdinIsTTY) {
+    stdinCache ??= await readStdinFn();
+    rawSeeds.push(...parseSeedInput(stdinCache));
   }
 
   return dedupePhrases(rawSeeds);
@@ -66,6 +81,14 @@ export function parseSeedCsv(content: string, sourceName = 'CSV input'): string[
 
 export function parseTxt(content: string): string[] {
   return content.split(/\r?\n/);
+}
+
+export function parseSeedInput(content: string): string[] {
+  if (looksLikeSeedCsv(content)) {
+    return parseSeedCsv(content);
+  }
+
+  return parseTxt(content);
 }
 
 export function dedupePhrases(values: string[]): string[] {
@@ -149,4 +172,16 @@ function readStdin(): Promise<string> {
     stdin.on('end', () => resolve(content));
     stdin.on('error', reject);
   });
+}
+
+function looksLikeSeedCsv(content: string): boolean {
+  const firstLine = content.split(/\r?\n/, 1)[0] ?? '';
+  if (!firstLine.includes(',')) {
+    return false;
+  }
+
+  return firstLine
+    .split(',')
+    .map((value) => normalizeQuery(value))
+    .includes('seed');
 }

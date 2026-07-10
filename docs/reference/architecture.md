@@ -301,7 +301,7 @@ Example:
 ```text
 Autocomplete utility
   input: seeds, country, language, depth, modifiers
-  output: generated prefixes, predictions, summary, errors
+  output: CSV/JSON/Markdown sidecars, generated prefixes, predictions, summary, errors
 ```
 
 ### 4.4 Validation Orchestrator

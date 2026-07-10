@@ -9,13 +9,6 @@ export function generateDepth1Prefixes(seed: string, modifiers: string[], maxPre
     ...ALPHABET.map((letter) => `${cleanedSeed} ${letter}`),
     ...modifiers.map((modifier) => `${modifier} ${cleanedSeed}`),
     ...modifiers.map((modifier) => `${cleanedSeed} ${modifier}`),
-    `how to ${cleanedSeed}`,
-    `best ${cleanedSeed}`,
-    `${cleanedSeed} app`,
-    `${cleanedSeed} android`,
-    `${cleanedSeed} iphone`,
-    `${cleanedSeed} automatically`,
-    `${cleanedSeed} not working`,
   ];
 
   return uniquePrefixes(prefixes)

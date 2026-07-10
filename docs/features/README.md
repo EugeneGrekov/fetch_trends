@@ -5,6 +5,9 @@ Feature-specific work is organized one directory per phase. Each directory holds
 ## Feature Directories
 - [Architecture Roadmap](architecture-roadmap/README.md)
 - [Autocomplete Refactor](autocomplete-refactor/README.md)
+- [Autocomplete Default Output](autocomplete-default-output/README.md)
+- [Autocomplete Markdown Report](autocomplete-markdown-report/README.md)
+- [Autocomplete Output Quality](autocomplete-output-quality/README.md)
 - [SQLite Foundation](sqlite-foundation/README.md)
 - [AI Runner](ai-runner/README.md)
 - [Codex Skills](codex-skills/README.md)

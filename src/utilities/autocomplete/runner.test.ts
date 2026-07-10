@@ -36,11 +36,20 @@ describe('autocomplete runner', () => {
 
     const csv = await readFile(out, 'utf8');
     const json = JSON.parse(await readFile(join(dir, 'parking.json'), 'utf8')) as { finalSummary: { seedCount: number } };
+    const markdown = await readFile(join(dir, 'parking.md'), 'utf8');
     const summaryCsv = await readFile(join(dir, 'parking.summary.csv'), 'utf8');
     const resume = JSON.parse(await readFile(join(dir, 'parking.resume.json'), 'utf8')) as { completedPrefixes: unknown[] };
 
     expect(csv).toContain('query,normalized_query,intent,confidence_score');
     expect(json.finalSummary.seedCount).toBe(1);
+    expect(markdown).toContain('# Autocomplete Report');
+    expect(markdown).toContain('`find my parked car`');
+    expect(markdown).toContain('- Country: `US`');
+    expect(markdown).toContain('- Language: `en`');
+    expect(markdown).toContain('- Depth: `2`');
+    expect(markdown).toContain('## Top Unique Predictions');
+    expect(markdown).toContain('find my parked car app');
+    expect(markdown).toContain('- Generated Prefixes: `5`');
     expect(summaryCsv).toContain('seed,prefixes_processed,predictions_collected');
     expect(resume.completedPrefixes).toHaveLength(5);
   });

@@ -18,7 +18,7 @@ export interface CliOptions {
   country: string;
   language: string;
   depth: 1 | 2;
-  out: string;
+  out?: string;
   modifier: string[];
   modifiers: string[];
   headless: boolean;
@@ -109,6 +109,7 @@ export interface RunMetadata {
   country: string;
   language: string;
   depth: 1 | 2;
+  modifiers?: string[];
   delayMs: number;
   maxPrefixes: number;
   maxDepth2Prefixes: number;

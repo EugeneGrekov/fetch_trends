@@ -82,6 +82,7 @@ async function createInitialState(options: RunOptions): Promise<MutableRunState>
       country: options.country,
       language: options.language,
       depth: options.depth,
+      modifiers: options.modifiers,
       delayMs: options.delayMs,
       maxPrefixes: options.maxPrefixes,
       maxDepth2Prefixes: options.maxDepth2Prefixes,
