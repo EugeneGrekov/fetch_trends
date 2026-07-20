@@ -173,6 +173,8 @@ export async function runValidationJob(
       depth: options.depth,
       out: outputPath,
       modifiers: options.modifiers,
+      mode: options.modifiers.length > 0 ? 'modifier' : 'organic',
+      includeDigits: false,
       headless: options.headless,
       delayMs: options.delayMs,
       maxPrefixes: options.maxPrefixes,

@@ -8,6 +8,7 @@ Feature-specific work is organized one directory per phase. Each directory holds
 - [Autocomplete Default Output](autocomplete-default-output/README.md)
 - [Autocomplete Markdown Report](autocomplete-markdown-report/README.md)
 - [Autocomplete Output Quality](autocomplete-output-quality/README.md)
+- [Autocomplete Discovery Modes](autocomplete-discovery-modes/README.md)
 - [SQLite Foundation](sqlite-foundation/README.md)
 - [AI Runner](ai-runner/README.md)
 - [Codex Skills](codex-skills/README.md)

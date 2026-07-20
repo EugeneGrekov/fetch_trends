@@ -1,9 +1,10 @@
-export type Intent =
-  | 'high purchase intent'
-  | 'how-to intent'
-  | 'comparison intent'
-  | 'problem intent'
-  | 'low intent';
+export type Intent = string;
+
+export type RunMode = 'organic' | 'modifier';
+
+export type SourceMode = 'organic' | 'modifier';
+
+export type RelevanceStatus = 'relevant' | 'rejected';
 
 export type Platform =
   | 'iPhone'
@@ -21,6 +22,8 @@ export interface CliOptions {
   out?: string;
   modifier: string[];
   modifiers: string[];
+  mode: RunMode;
+  includeDigits: boolean;
   headless: boolean;
   delayMs: number;
   maxPrefixes: number;
@@ -35,6 +38,8 @@ export interface RunOptions {
   depth: 1 | 2;
   out: string;
   modifiers: string[];
+  mode: RunMode;
+  includeDigits: boolean;
   headless: boolean;
   delayMs: number;
   maxPrefixes: number;
@@ -56,6 +61,8 @@ export interface GeneratedPrefix {
   seed: string;
   prefix: string;
   depth: 1 | 2;
+  sourceMode: SourceMode;
+  modifierUsed?: string;
   sourcePrediction?: string;
 }
 
@@ -63,6 +70,11 @@ export interface PredictionRecord {
   originalSeed: string;
   sourcePrefix: string;
   prediction: string;
+  prefixSent: string;
+  exactPrediction: string;
+  sourceMode: SourceMode;
+  modifierUsed?: string;
+  predictionRank: number;
   timestamp: string;
   country: string;
   language: string;
@@ -71,9 +83,20 @@ export interface PredictionRecord {
 
 export interface UniquePrediction {
   query: string;
+  exactPrediction: string;
   normalizedQuery: string;
   intent: Intent;
+  intentClassification: Intent;
   confidenceScore: number;
+  evidenceScore: number;
+  averageRank: number;
+  sourceMode: SourceMode | 'mixed';
+  sourceModes: SourceMode[];
+  modifierUsed?: string;
+  modifierUsedValues: string[];
+  relevanceStatus: RelevanceStatus;
+  relevanceGroups: string[];
+  rejectionReasons: string[];
   platform: Platform;
   sourceSeeds: string[];
   sourceSeedCount: number;
@@ -90,6 +113,12 @@ export interface SeedSummary {
   prefixesProcessed: number;
   predictionsCollected: number;
   uniquePredictionsCollected: number;
+  organicPredictionsFound: number;
+  relevantPredictionsFound: number;
+  irrelevantPredictionsFound: number;
+  repeatedPredictions: number;
+  strongestExactSuggestion?: string;
+  noSignal: boolean;
   errorCount: number;
   status: 'pending' | 'completed' | 'failed' | 'stopped';
 }
@@ -110,6 +139,8 @@ export interface RunMetadata {
   language: string;
   depth: 1 | 2;
   modifiers?: string[];
+  mode: RunMode;
+  includeDigits: boolean;
   delayMs: number;
   maxPrefixes: number;
   maxDepth2Prefixes: number;

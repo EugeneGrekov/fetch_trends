@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, extname, join } from 'node:path';
 import { normalizeQuery } from './normalize.js';
-import type { ResumeState, RunReport, SeedSummary, UniquePrediction } from './types.js';
+import type { PredictionRecord, ResumeState, RunReport, SeedSummary, UniquePrediction } from './types.js';
 
 export interface OutputPaths {
   csv: string;
@@ -33,7 +33,7 @@ export async function ensureOutputDirectory(outPath: string): Promise<void> {
 export async function writeFinalReport(report: RunReport, outPath: string): Promise<void> {
   const paths = getOutputPaths(outPath);
   await Promise.all([
-    writeTextFile(paths.csv, uniquePredictionsToCsv(report.uniqueNormalizedPredictions)),
+    writeTextFile(paths.csv, predictionRecordsToCsv(report.collectedPredictions)),
     writeJsonFile(paths.json, report),
     writeTextFile(paths.md, renderMarkdownReport(report)),
     writeTextFile(paths.summaryCsv, seedSummariesToCsv(report.perSeedSummaries)),
@@ -71,37 +71,29 @@ export async function loadResumeState(outPath: string): Promise<ResumeState | un
   return undefined;
 }
 
-function uniquePredictionsToCsv(predictions: UniquePrediction[]): string {
+function predictionRecordsToCsv(predictions: PredictionRecord[]): string {
   return toCsv(
     [
-      'query',
-      'normalized_query',
-      'intent',
-      'confidence_score',
-      'platform',
-      'source_seeds',
-      'source_seed_count',
-      'source_prefixes',
-      'source_prefix_count',
+      'original_seed',
+      'prefix_sent',
+      'exact_prediction',
+      'source_mode',
+      'modifier_used',
+      'prediction_rank',
       'country',
       'language',
       'timestamp',
-      'next_validation_step',
     ],
     predictions.map((prediction) => [
-      prediction.query,
-      prediction.normalizedQuery,
-      prediction.intent,
-      String(prediction.confidenceScore),
-      prediction.platform,
-      prediction.sourceSeeds.join(' | '),
-      String(prediction.sourceSeedCount),
-      prediction.sourcePrefixes.join(' | '),
-      String(prediction.sourcePrefixCount),
+      prediction.originalSeed,
+      prediction.prefixSent,
+      prediction.exactPrediction,
+      prediction.sourceMode,
+      prediction.modifierUsed ?? '',
+      String(prediction.predictionRank),
       prediction.country,
       prediction.language,
       prediction.timestamp,
-      prediction.nextValidationStep,
     ]),
   );
 }
@@ -113,6 +105,12 @@ function seedSummariesToCsv(summaries: SeedSummary[]): string {
       'prefixes_processed',
       'predictions_collected',
       'unique_predictions_collected',
+      'organic_predictions_found',
+      'relevant_predictions_found',
+      'irrelevant_predictions_found',
+      'repeated_predictions',
+      'strongest_exact_suggestion',
+      'no_signal',
       'error_count',
       'status',
     ],
@@ -121,6 +119,12 @@ function seedSummariesToCsv(summaries: SeedSummary[]): string {
       String(summary.prefixesProcessed),
       String(summary.predictionsCollected),
       String(summary.uniquePredictionsCollected),
+      String(summary.organicPredictionsFound),
+      String(summary.relevantPredictionsFound),
+      String(summary.irrelevantPredictionsFound),
+      String(summary.repeatedPredictions),
+      summary.strongestExactSuggestion ?? '',
+      String(summary.noSignal),
       String(summary.errorCount),
       summary.status,
     ]),
@@ -128,7 +132,7 @@ function seedSummariesToCsv(summaries: SeedSummary[]): string {
 }
 
 export function renderMarkdownReport(report: RunReport): string {
-  const topPredictions = selectTopPredictionsForMarkdown(report);
+  const sections = buildReportSections(report.uniqueNormalizedPredictions);
   const lines = [
     '# Autocomplete Report',
     '',
@@ -137,6 +141,8 @@ export function renderMarkdownReport(report: RunReport): string {
     `- Country: \`${report.runMetadata.country}\``,
     `- Language: \`${report.runMetadata.language}\``,
     `- Depth: \`${String(report.runMetadata.depth)}\``,
+    `- Mode: \`${report.runMetadata.mode}\``,
+    `- Include Digits: \`${report.runMetadata.includeDigits ? 'yes' : 'no'}\``,
     ...(report.runMetadata.modifiers && report.runMetadata.modifiers.length > 0
       ? [`- Modifiers: ${formatCodeList(report.runMetadata.modifiers)}`]
       : []),
@@ -161,32 +167,32 @@ export function renderMarkdownReport(report: RunReport): string {
     `- Stopped Early: \`${report.finalSummary.stopped ? 'yes' : 'no'}\``,
     '',
     '## Per-Seed Summary',
-    '| Seed | Prefixes Processed | Predictions Collected | Unique Predictions | Errors | Status |',
-    '| --- | ---: | ---: | ---: | ---: | --- |',
+    '| Seed | Prefixes Processed | Organic Predictions | Relevant | Irrelevant | Repeated | Strongest Exact Suggestion | No Signal | Errors | Status |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: | --- |',
     ...report.perSeedSummaries.map((summary) => markdownTableRow([
       summary.seed,
       String(summary.prefixesProcessed),
-      String(summary.predictionsCollected),
-      String(summary.uniquePredictionsCollected),
+      String(summary.organicPredictionsFound),
+      String(summary.relevantPredictionsFound),
+      String(summary.irrelevantPredictionsFound),
+      String(summary.repeatedPredictions),
+      summary.strongestExactSuggestion ?? '',
+      summary.noSignal ? 'yes' : 'no',
       String(summary.errorCount),
       summary.status,
     ])),
-    '',
-    '## Top Unique Predictions',
-    '| Query | Intent | Confidence | Platform | Source Seeds | Source Prefixes | Next Validation Step |',
-    '| --- | --- | ---: | --- | --- | --- | --- |',
-    ...(topPredictions.length > 0
-      ? topPredictions.map((prediction) => markdownTableRow([
-          prediction.query,
-          prediction.intent,
-          String(prediction.confidenceScore),
-          prediction.platform,
-          formatListPreview(prediction.sourceSeeds),
-          formatListPreview(prediction.sourcePrefixes),
-          prediction.nextValidationStep,
-        ]))
-      : [markdownTableRow(['No unique predictions collected', '-', '-', '-', '-', '-', '-'])]),
   );
+
+  appendPredictionSection(lines, 'Strong Organic Suggestions', sections.strongOrganic);
+  appendPredictionSection(lines, 'Repeated Suggestions Across Seeds', sections.repeatedAcrossSeeds);
+  appendPredictionSection(lines, 'Tool-Seeking Phrases', sections.toolSeeking);
+  appendPredictionSection(lines, 'Informational And How-To Phrases', sections.informational);
+  appendPredictionSection(lines, 'Gmail Workflow Phrases', sections.gmailWorkflow);
+  appendPredictionSection(lines, 'Chrome Extension Phrases', sections.chromeExtension);
+  appendPredictionSection(lines, 'Modifier-Only Suggestions', sections.modifierOnly);
+  appendNoSignalSeedsSection(lines, report.perSeedSummaries);
+  appendPredictionSection(lines, 'Rejected Noise', sections.rejectedNoise, true);
+  appendRecommendedNextValidationPhrases(lines, sections.recommendedNextValidation);
 
   if (report.errors.length > 0) {
     lines.push(
@@ -208,68 +214,122 @@ export function renderMarkdownReport(report: RunReport): string {
   return `${lines.join('\n')}\n`;
 }
 
-function selectTopPredictionsForMarkdown(report: RunReport, limit = 25): UniquePrediction[] {
-  const seedTerms = buildSeedTerms(report.inputSeeds);
+function buildReportSections(predictions: UniquePrediction[]): {
+  strongOrganic: UniquePrediction[];
+  repeatedAcrossSeeds: UniquePrediction[];
+  toolSeeking: UniquePrediction[];
+  informational: UniquePrediction[];
+  gmailWorkflow: UniquePrediction[];
+  chromeExtension: UniquePrediction[];
+  modifierOnly: UniquePrediction[];
+  rejectedNoise: UniquePrediction[];
+  recommendedNextValidation: UniquePrediction[];
+} {
+  const relevant = predictions.filter((prediction) => prediction.relevanceStatus === 'relevant');
+  const byEvidence = (left: UniquePrediction, right: UniquePrediction) =>
+    right.evidenceScore - left.evidenceScore || left.normalizedQuery.localeCompare(right.normalizedQuery);
 
-  return report.uniqueNormalizedPredictions
-    .map((prediction, index) => ({
-      prediction,
-      index,
-      relevanceScore: scorePredictionRelevance(prediction.normalizedQuery, seedTerms),
-    }))
-    .sort((a, b) => {
-      if (b.relevanceScore !== a.relevanceScore) {
-        return b.relevanceScore - a.relevanceScore;
-      }
-
-      if (b.prediction.confidenceScore !== a.prediction.confidenceScore) {
-        return b.prediction.confidenceScore - a.prediction.confidenceScore;
-      }
-
-      return a.index - b.index;
-    })
-    .slice(0, limit)
-    .map((ranked) => ranked.prediction);
+  return {
+    strongOrganic: relevant
+      .filter((prediction) => prediction.sourceModes.includes('organic'))
+      .sort(byEvidence)
+      .slice(0, 25),
+    repeatedAcrossSeeds: relevant
+      .filter((prediction) => prediction.sourceSeedCount > 1)
+      .sort(byEvidence)
+      .slice(0, 25),
+    toolSeeking: relevant
+      .filter((prediction) => prediction.intent === 'tool-seeking')
+      .sort(byEvidence)
+      .slice(0, 25),
+    informational: relevant
+      .filter((prediction) => prediction.intent === 'informational')
+      .sort(byEvidence)
+      .slice(0, 25),
+    gmailWorkflow: relevant
+      .filter((prediction) => prediction.intent === 'workflow' && prediction.normalizedQuery.includes('gmail'))
+      .sort(byEvidence)
+      .slice(0, 25),
+    chromeExtension: relevant
+      .filter((prediction) => prediction.normalizedQuery.includes('chrome extension'))
+      .sort(byEvidence)
+      .slice(0, 25),
+    modifierOnly: relevant
+      .filter((prediction) => prediction.sourceMode === 'modifier')
+      .sort(byEvidence)
+      .slice(0, 25),
+    rejectedNoise: predictions
+      .filter((prediction) => prediction.relevanceStatus === 'rejected')
+      .sort((left, right) => left.normalizedQuery.localeCompare(right.normalizedQuery))
+      .slice(0, 50),
+    recommendedNextValidation: relevant.sort(byEvidence).slice(0, 10),
+  };
 }
 
-function buildSeedTerms(seeds: string[]): Set<string> {
-  const terms = new Set<string>();
+function appendPredictionSection(
+  lines: string[],
+  title: string,
+  predictions: UniquePrediction[],
+  includeRejectionReason = false,
+): void {
+  lines.push('', `## ${title}`);
+  const headers = includeRejectionReason
+    ? ['Exact Prediction', 'Intent', 'Evidence Score', 'Source Mode', 'Avg Rank', 'Source Seeds', 'Rejection Reasons']
+    : ['Exact Prediction', 'Intent', 'Evidence Score', 'Source Mode', 'Avg Rank', 'Source Seeds', 'Next Step'];
 
-  for (const seed of seeds) {
-    for (const term of normalizeQuery(seed).split(' ')) {
-      if (term.length < 4 || IGNORED_RELEVANCE_TERMS.has(term)) {
-        continue;
-      }
+  lines.push(markdownTableRow(headers));
+  lines.push(markdownTableSeparator(headers.length));
 
-      terms.add(term);
-    }
+  if (predictions.length === 0) {
+    lines.push(markdownTableRow(['No suggestions', '-', '-', '-', '-', '-', '-']));
+    return;
   }
 
-  return terms;
+  for (const prediction of predictions) {
+    lines.push(markdownTableRow([
+      prediction.exactPrediction,
+      prediction.intent,
+      String(prediction.evidenceScore),
+      prediction.sourceMode,
+      String(prediction.averageRank),
+      formatListPreview(prediction.sourceSeeds),
+      includeRejectionReason ? prediction.rejectionReasons.join(', ') : prediction.nextValidationStep,
+    ]));
+  }
 }
 
-const IGNORED_RELEVANCE_TERMS = new Set([
-  'find',
-  'from',
-  'with',
-  'that',
-  'this',
-  'into',
-  'open',
-  'best',
-  'free',
-]);
+function appendNoSignalSeedsSection(lines: string[], summaries: SeedSummary[]): void {
+  lines.push('', '## No-Signal Seeds');
+  lines.push('| Seed | Prefixes Processed | Relevant Predictions | Irrelevant Predictions |');
+  lines.push('| --- | ---: | ---: | ---: |');
 
-function scorePredictionRelevance(normalizedQuery: string, seedTerms: Set<string>): number {
-  let score = 0;
-
-  for (const term of seedTerms) {
-    if (normalizedQuery.includes(term)) {
-      score += 1;
-    }
+  const noSignalSeeds = summaries.filter((summary) => summary.noSignal);
+  if (noSignalSeeds.length === 0) {
+    lines.push('| No no-signal seeds | - | - | - |');
+    return;
   }
 
-  return score;
+  for (const summary of noSignalSeeds) {
+    lines.push(markdownTableRow([
+      summary.seed,
+      String(summary.prefixesProcessed),
+      String(summary.relevantPredictionsFound),
+      String(summary.irrelevantPredictionsFound),
+    ]));
+  }
+}
+
+function appendRecommendedNextValidationPhrases(lines: string[], predictions: UniquePrediction[]): void {
+  lines.push('', '## Recommended Next Validation Phrases');
+
+  if (predictions.length === 0) {
+    lines.push('- No relevant suggestions found.');
+    return;
+  }
+
+  for (const prediction of predictions) {
+    lines.push(`- ${prediction.exactPrediction}`);
+  }
 }
 
 function toCsv(headers: string[], rows: string[][]): string {
@@ -301,6 +361,10 @@ function escapeInlineCode(value: string): string {
 
 function markdownTableRow(cells: string[]): string {
   return `| ${cells.map(escapeMarkdownTableCell).join(' | ')} |`;
+}
+
+function markdownTableSeparator(columnCount: number): string {
+  return `| ${Array.from({ length: columnCount }, () => '---').join(' | ')} |`;
 }
 
 function escapeMarkdownTableCell(value: string): string {

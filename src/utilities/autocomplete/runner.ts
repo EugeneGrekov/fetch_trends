@@ -3,7 +3,6 @@ import { CaptchaDetectedError } from './collector.js';
 import { ensureOutputDirectory, loadResumeState, saveResumeState, writeFinalReport } from './exporter.js';
 import { generateDepth1Prefixes, generateDepth2Prefixes, prefixKey } from './expansion.js';
 import { normalizeQuery } from './normalize.js';
-import { uniqueNormalized } from './normalize.js';
 import type {
   AutocompleteCollector,
   GeneratedPrefix,
@@ -83,6 +82,8 @@ async function createInitialState(options: RunOptions): Promise<MutableRunState>
       language: options.language,
       depth: options.depth,
       modifiers: options.modifiers,
+      mode: options.mode,
+      includeDigits: options.includeDigits,
       delayMs: options.delayMs,
       maxPrefixes: options.maxPrefixes,
       maxDepth2Prefixes: options.maxDepth2Prefixes,
@@ -109,7 +110,9 @@ function isCompatibleResume(state: ResumeState, options: RunOptions): boolean {
     sameSeeds &&
     state.runMetadata.country === options.country &&
     state.runMetadata.language === options.language &&
-    state.runMetadata.depth <= options.depth
+    state.runMetadata.depth <= options.depth &&
+    (state.runMetadata.mode ?? 'organic') === options.mode &&
+    Boolean(state.runMetadata.includeDigits) === options.includeDigits
   );
 }
 
@@ -157,7 +160,10 @@ async function processSeed(args: {
   progress?: ProgressHandler;
 }): Promise<void> {
   const { seed, seedIndex, options, state, collector, completedPrefixKeys, progress } = args;
-  const depth1Prefixes = generateDepth1Prefixes(seed, options.modifiers, options.maxPrefixes);
+  const depth1Prefixes = generateDepth1Prefixes(seed, options.modifiers, options.maxPrefixes, {
+    mode: options.mode,
+    includeDigits: options.includeDigits,
+  });
   registerGeneratedPrefixes(state, depth1Prefixes);
 
   const depth1Completed = await processPrefixes({
@@ -224,11 +230,16 @@ async function processPrefixes(args: {
       });
       const timestamp = new Date().toISOString();
 
-      for (const prediction of uniqueNormalized(predictions)) {
+      for (const rankedPrediction of uniqueRankedPredictions(predictions)) {
         state.collectedPredictions.push({
           originalSeed: seed,
           sourcePrefix: prefix.prefix,
-          prediction,
+          prediction: rankedPrediction.prediction,
+          prefixSent: prefix.prefix,
+          exactPrediction: rankedPrediction.prediction,
+          sourceMode: prefix.sourceMode ?? options.mode,
+          modifierUsed: prefix.modifierUsed,
+          predictionRank: rankedPrediction.rank,
           timestamp,
           country: options.country,
           language: options.language,
@@ -295,12 +306,24 @@ function updateSeedSummary(seed: string, state: MutableRunState, status: SeedSum
       .map((prefix) => prefixKey(prefix)),
   );
   const predictions = state.collectedPredictions.filter((prediction) => prediction.originalSeed === seed);
+  const uniquePredictions = buildUniquePredictions(state.collectedPredictions);
+  const seedUniquePredictions = uniquePredictions.filter((prediction) => prediction.sourceSeeds.includes(seed));
+  const relevantPredictions = seedUniquePredictions.filter((prediction) => prediction.relevanceStatus === 'relevant');
+  const irrelevantPredictions = seedUniquePredictions.filter((prediction) => prediction.relevanceStatus === 'rejected');
+  const repeatedPredictions = seedUniquePredictions.filter((prediction) => prediction.sourceSeedCount > 1);
+  const strongest = relevantPredictions[0];
   const errors = state.errors.filter((error) => error.seed === seed);
   const summary: SeedSummary = {
     seed,
     prefixesProcessed: prefixKeys.size,
     predictionsCollected: predictions.length,
-    uniquePredictionsCollected: buildUniquePredictions(predictions).length,
+    uniquePredictionsCollected: seedUniquePredictions.length,
+    organicPredictionsFound: predictions.filter((prediction) => prediction.sourceMode === 'organic').length,
+    relevantPredictionsFound: relevantPredictions.length,
+    irrelevantPredictionsFound: irrelevantPredictions.length,
+    repeatedPredictions: repeatedPredictions.length,
+    strongestExactSuggestion: strongest?.exactPrediction,
+    noSignal: relevantPredictions.length === 0,
     errorCount: errors.length,
     status,
   };
@@ -401,4 +424,25 @@ async function randomDelay(delayMs: number): Promise<void> {
   await new Promise((resolve) => {
     setTimeout(resolve, waitMs);
   });
+}
+
+function uniqueRankedPredictions(predictions: string[]): Array<{ prediction: string; rank: number }> {
+  const seen = new Set<string>();
+  const output: Array<{ prediction: string; rank: number }> = [];
+
+  for (let index = 0; index < predictions.length; index += 1) {
+    const prediction = predictions[index] ?? '';
+    const key = normalizeQuery(prediction);
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    output.push({
+      prediction,
+      rank: index + 1,
+    });
+  }
+
+  return output;
 }

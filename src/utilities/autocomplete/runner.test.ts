@@ -40,14 +40,14 @@ describe('autocomplete runner', () => {
     const summaryCsv = await readFile(join(dir, 'parking.summary.csv'), 'utf8');
     const resume = JSON.parse(await readFile(join(dir, 'parking.resume.json'), 'utf8')) as { completedPrefixes: unknown[] };
 
-    expect(csv).toContain('query,normalized_query,intent,confidence_score');
+    expect(csv).toContain('original_seed,prefix_sent,exact_prediction,source_mode');
     expect(json.finalSummary.seedCount).toBe(1);
     expect(markdown).toContain('# Autocomplete Report');
     expect(markdown).toContain('`find my parked car`');
     expect(markdown).toContain('- Country: `US`');
     expect(markdown).toContain('- Language: `en`');
     expect(markdown).toContain('- Depth: `2`');
-    expect(markdown).toContain('## Top Unique Predictions');
+    expect(markdown).toContain('## Strong Organic Suggestions');
     expect(markdown).toContain('find my parked car app');
     expect(markdown).toContain('- Generated Prefixes: `5`');
     expect(summaryCsv).toContain('seed,prefixes_processed,predictions_collected');
@@ -153,7 +153,9 @@ function options(overrides: Partial<RunOptions>): RunOptions {
     language: 'en',
     depth: 1,
     out: './results/test.csv',
-    modifiers: ['automatic', 'app'],
+    modifiers: [],
+    mode: 'organic',
+    includeDigits: false,
     headless: true,
     delayMs: 0,
     maxPrefixes: 3,

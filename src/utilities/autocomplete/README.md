@@ -13,6 +13,11 @@ When `--out` is omitted, the basename starts with local date and minute, for exa
 
 Default modifiers are neutral business-validation terms. Pass `--modifier` or `--modifiers` for domain-specific expansion.
 
+Discovery modes:
+- `--mode organic` queries the exact seed plus seed `a-z`; add `--includeDigits` to also query seed `0-9`.
+- `--mode modifier` requires `--modifier` or `--modifiers` and uses only that allowlist.
+- Generated prefixes are stored separately; final suggestion sections use only exact Google-returned predictions.
+
 The utility validates search language, not demand volume.
 
 Keep Playwright collection respectful:

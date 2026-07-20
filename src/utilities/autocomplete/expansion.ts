@@ -1,23 +1,32 @@
 import { ALPHABET } from './constants.js';
 import { normalizeQuery, normalizeSpaces } from './normalize.js';
-import type { GeneratedPrefix, PredictionRecord } from './types.js';
+import type { GeneratedPrefix, PredictionRecord, RunMode } from './types.js';
 
-export function generateDepth1Prefixes(seed: string, modifiers: string[], maxPrefixes: number): GeneratedPrefix[] {
+export function generateDepth1Prefixes(
+  seed: string,
+  modifiers: string[],
+  maxPrefixes: number,
+  options: { mode?: RunMode; includeDigits?: boolean } = {},
+): GeneratedPrefix[] {
   const cleanedSeed = normalizeSpaces(seed);
-  const prefixes = [
-    cleanedSeed,
-    ...ALPHABET.map((letter) => `${cleanedSeed} ${letter}`),
-    ...modifiers.map((modifier) => `${modifier} ${cleanedSeed}`),
-    ...modifiers.map((modifier) => `${cleanedSeed} ${modifier}`),
-  ];
+  const mode = options.mode ?? 'modifier';
+  const prefixes = mode === 'organic'
+    ? generateOrganicPrefixes(cleanedSeed, Boolean(options.includeDigits))
+    : generateModifierPrefixes(cleanedSeed, modifiers);
 
   return uniquePrefixes(prefixes)
     .slice(0, maxPrefixes)
-    .map((prefix) => ({
+    .map((prefix) => {
+      const modifierUsed = mode === 'modifier' ? findModifierForPrefix(prefix, cleanedSeed, modifiers) : undefined;
+
+      return {
       seed: cleanedSeed,
       prefix,
       depth: 1,
-    }));
+      sourceMode: mode,
+      modifierUsed,
+      };
+    });
 }
 
 export function generateDepth2Prefixes(
@@ -39,6 +48,7 @@ export function generateDepth2Prefixes(
         seed,
         prefix: `${prediction} ${letter}`,
         depth: 2,
+        sourceMode: 'organic',
         sourcePrediction: prediction,
       });
 
@@ -49,6 +59,36 @@ export function generateDepth2Prefixes(
   }
 
   return depth2Prefixes;
+}
+
+function generateOrganicPrefixes(seed: string, includeDigits: boolean): string[] {
+  const suffixes = includeDigits ? [...ALPHABET, ...'0123456789'.split('')] : ALPHABET;
+
+  return [
+    seed,
+    ...suffixes.map((suffix) => `${seed} ${suffix}`),
+  ];
+}
+
+function generateModifierPrefixes(seed: string, modifiers: string[]): string[] {
+  return [
+    ...modifiers.map((modifier) => `${modifier} ${seed}`),
+    ...modifiers.map((modifier) => `${seed} ${modifier}`),
+  ];
+}
+
+function findModifierForPrefix(prefix: string, seed: string, modifiers: string[]): string | undefined {
+  const normalizedPrefix = normalizeQuery(prefix);
+  const normalizedSeed = normalizeQuery(seed);
+
+  return modifiers.find((modifier) => {
+    const normalizedModifier = normalizeQuery(modifier);
+    return (
+      normalizedPrefix === normalizeQuery(`${modifier} ${seed}`) ||
+      normalizedPrefix === normalizeQuery(`${seed} ${modifier}`) ||
+      (normalizedModifier && normalizedPrefix.replace(normalizedSeed, '').trim() === normalizedModifier)
+    );
+  });
 }
 
 export function prefixKey(prefix: Pick<GeneratedPrefix, 'seed' | 'prefix' | 'depth'>): string {

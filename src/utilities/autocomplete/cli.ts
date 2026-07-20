@@ -6,7 +6,7 @@ import { PlaywrightAutocompleteCollector } from './collector.js';
 import { loadSeeds, resolveModifiers } from './input.js';
 import { resolveAutocompleteOutputPath } from './output.js';
 import { runAutocompleteResearch } from './runner.js';
-import type { CliOptions, ProgressUpdate, RunOptions } from './types.js';
+import type { CliOptions, ProgressUpdate, RunMode, RunOptions } from './types.js';
 
 export function buildAutocompleteProgram(): Command {
   const program = new Command();
@@ -24,6 +24,8 @@ export function buildAutocompleteProgram(): Command {
     .option('--country <country>', 'Google country code', 'US')
     .option('--language <language>', 'Google interface language', 'en')
     .option('--depth <depth>', 'collection depth: 1 or 2', parseDepth, 1)
+    .option('--mode <mode>', 'discovery mode: organic or modifier', parseRunMode, 'organic')
+    .option('--includeDigits', 'organic mode only: also query seed followed by 0-9', false)
     .option('--out <path>', 'output path for CSV/JSON/Markdown reports; defaults to ./results/<local-date>_<time>_<first-word>.csv')
     .option('--modifier <value>', 'custom modifier; can be passed multiple times', collectValues, [])
     .option('--modifiers <items-or-path>', 'comma-separated custom modifiers or a TXT file path', collectValues, [])
@@ -42,7 +44,13 @@ export function buildAutocompleteProgram(): Command {
           throw new InvalidArgumentError('At least one --seed or --seeds input is required.');
         }
 
-        const modifiers = await resolveModifiers(rawOptions.modifier, rawOptions.modifiers);
+        if (rawOptions.mode === 'modifier' && rawOptions.modifier.length === 0 && rawOptions.modifiers.length === 0) {
+          throw new InvalidArgumentError('Modifier mode requires --modifier or --modifiers. Defaults are not added.');
+        }
+
+        const modifiers = rawOptions.mode === 'modifier'
+          ? await resolveModifiers(rawOptions.modifier, rawOptions.modifiers)
+          : [];
         const out = resolveAutocompleteOutputPath(rawOptions.out, seeds);
         const options: RunOptions = {
           seeds,
@@ -51,6 +59,8 @@ export function buildAutocompleteProgram(): Command {
           depth: rawOptions.depth,
           out,
           modifiers,
+          mode: rawOptions.mode,
+          includeDigits: rawOptions.includeDigits,
           headless: rawOptions.headless,
           delayMs: rawOptions.delayMs,
           maxPrefixes: rawOptions.maxPrefixes,
@@ -133,6 +143,15 @@ function parseDepth(value: string): 1 | 2 {
   }
 
   throw new InvalidArgumentError('--depth must be 1 or 2.');
+}
+
+function parseRunMode(value: string): RunMode {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'organic' || normalized === 'modifier') {
+    return normalized;
+  }
+
+  throw new InvalidArgumentError('--mode must be organic or modifier.');
 }
 
 function parseBoolean(value: string): boolean {

@@ -16,8 +16,8 @@ Default tests and release checks must not call live external APIs, payment provi
 
 - Purpose: collect Google Autocomplete predictions for seed phrases.
 - Example: `npm run autocomplete -- --seed "find my parked car" --country US --language en --depth 1`
-- Inputs: `--seed`, `--seeds`, `--country`, `--language`, `--depth`, modifiers, browser/headless controls, optional output path, resume controls.
-- Outputs: CSV, JSON, Markdown, summary CSV/JSON, and `.resume.json` near the requested output.
+- Inputs: `--seed`, `--seeds`, `--country`, `--language`, `--depth`, `--mode organic|modifier`, optional `--includeDigits`, explicit modifiers for modifier mode, browser/headless controls, optional output path, resume controls.
+- Outputs: returned-prediction CSV, JSON, Markdown, summary CSV/JSON, and `.resume.json` near the requested output.
 - Live services: yes. Uses Playwright against Google Autocomplete pages and stops rather than bypassing CAPTCHA or anti-bot pages.
 - SQLite writes: no.
 - File outputs: yes, defaulting to `./results/<local-date>_<time>_<first-word>.csv` when `--out` is omitted.
