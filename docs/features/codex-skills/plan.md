@@ -119,26 +119,34 @@ Use when the user asks Codex to:
 - Find search-language evidence.
 - Expand seed phrases.
 - Inspect autocomplete output.
-- Identify high-intent/problem-intent queries.
+- Identify organic suggestions, repeated suggestions, modifier-only suggestions, and rejected noise.
 
 ### Expected Commands
 
-Typical command:
+Organic discovery is the default validation pass. It must not use modifiers:
+
+Omit `--out` when the default `./results/YYYY-MM-DD_HH:mm_<first-word>.csv` basename is acceptable.
 
 ```bash
-npm run autocomplete -- --seed "<seed>" --country US --language en --depth 1 --out ./results/<slug>.csv
+npm run autocomplete -- --mode organic --seed "<seed>" --country US --language en --depth 1 --out ./results/<slug>-organic.csv
 ```
 
 Batch command:
 
 ```bash
-npm run autocomplete -- --seeds <path> --country US --language en --depth 1 --out ./results/<slug>.csv
+npm run autocomplete -- --mode organic --seeds <path> --country US --language en --depth 1 --out ./results/<slug>-organic.csv
 ```
 
 Depth 2 only when useful:
 
 ```bash
-npm run autocomplete -- --seed "<seed>" --depth 2 --maxDepth2Prefixes 100 --out ./results/<slug>.csv
+npm run autocomplete -- --mode organic --seed "<seed>" --depth 2 --maxDepth2Prefixes 100 --out ./results/<slug>-organic.csv
+```
+
+Controlled modifier discovery must run separately and must use an explicit allowlist:
+
+```bash
+npm run autocomplete -- --mode modifier --modifiers data/modifiers__gmail.txt --seeds <path> --country US --language en --depth 1 --out ./results/<slug>-modifier.csv
 ```
 
 ### Output Summary
@@ -148,15 +156,20 @@ The skill should report:
 - Output files.
 - Total predictions.
 - Unique normalized predictions.
-- Top high-intent queries.
-- Top problem-intent queries.
-- Weak or low-intent queries to avoid.
-- Recommended next validation action.
+- Strong organic suggestions.
+- Repeated suggestions across seeds.
+- Tool-seeking, informational, Gmail workflow, and Chrome extension phrases.
+- Modifier-only suggestions, clearly separated.
+- No-signal seeds.
+- Rejected noise.
+- Recommended next validation phrases.
 
 ### Guardrails
 
 - Say autocomplete validates wording, not volume.
 - Do not claim monthly demand.
+- Do not treat generated prefixes or modifier allowlists as evidence.
+- Only exact Google-returned predictions are evidence.
 - Warn if Google blocks or CAPTCHA appears.
 - Do not bypass anti-bot systems.
 

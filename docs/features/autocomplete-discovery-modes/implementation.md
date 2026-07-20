@@ -18,6 +18,10 @@ Reports distinguish generated prefixes from exact Google-returned predictions, a
 - `src/revalidation/revalidation-runner.ts`
 - `src/validation/orchestrator.ts`
 - `src/utilities/autocomplete/README.md`
+- `.codex/skills/micro-business-autocomplete/SKILL.md`
+- `.codex/skills/micro-business-validate/SKILL.md`
+- `.codex/skills/micro-business-report/SKILL.md`
+- `docs/reference/architecture.md`
 - `docs/reference/commands.md`
 - `docs/features/README.md`
 - `docs/features/autocomplete-discovery-modes/README.md`
@@ -43,6 +47,9 @@ Reports distinguish generated prefixes from exact Google-returned predictions, a
 - `npm test` passed on 2026-07-10.
 - `npm run build` passed on 2026-07-10.
 - `npm run lint` passed on 2026-07-10.
+- `python3 /Users/egrekov/.codex/skills/.system/skill-creator/scripts/quick_validate.py .codex/skills/micro-business-autocomplete` passed on 2026-07-20.
+- `python3 /Users/egrekov/.codex/skills/.system/skill-creator/scripts/quick_validate.py .codex/skills/micro-business-validate` passed on 2026-07-20.
+- `python3 /Users/egrekov/.codex/skills/.system/skill-creator/scripts/quick_validate.py .codex/skills/micro-business-report` passed on 2026-07-20.
 
 ## Known Limitations
 - Repeated-across-runs scoring is not fully historical without a persistence layer; current scoring can only use current/resumed artifacts.

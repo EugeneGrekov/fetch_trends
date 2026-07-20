@@ -60,6 +60,7 @@ Return:
 - Cite the local IDs used.
 - Do not change stored reports.
 - Do not turn a report summary into a stronger claim than the evidence supports.
+- Keep organic suggestions, modifier-only suggestions, and rejected noise separate when the stored report includes those sections.
 - Keep facts, inference, and missing proof separate.
 
 ## Failure handling

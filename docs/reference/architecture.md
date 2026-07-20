@@ -300,8 +300,8 @@ Example:
 
 ```text
 Autocomplete utility
-  input: seeds, country, language, depth, modifiers
-  output: CSV/JSON/Markdown sidecars, generated prefixes, predictions, summary, errors
+  input: mode, seeds, country, language, depth, optional modifier allowlist
+  output: CSV/JSON/Markdown sidecars, generated prefixes, exact returned predictions, source metadata, relevance summary, errors
 ```
 
 ### 4.4 Validation Orchestrator
@@ -561,9 +561,9 @@ CLI command
   -> autocomplete utility
   -> generated prefixes
   -> Google Autocomplete collector
-  -> predictions
-  -> normalization/classification/scoring
-  -> CSV/JSON export
+  -> exact returned predictions with source metadata
+  -> normalization/relevance classification/evidence scoring
+  -> CSV/JSON/Markdown export
   -> optional SQLite persistence
 ```
 
@@ -997,7 +997,7 @@ The 100-point score supports richer automation.
 | Urgency | 10 |
 | Existing annoying workaround | 10 |
 | Search demand | 15 |
-| High-intent keywords | 10 |
+| Organic wording evidence | 10 |
 | Competitor weakness | 10 |
 | Payment proxy | 15 |
 | Technical simplicity | 10 |
@@ -1019,7 +1019,7 @@ Kill rules override scores.
 
 Hard kill examples:
 
-- No high-intent search queries found.
+- No relevant organic exact predictions found.
 - Existing free solution is simple, trusted, and solves the exact job.
 - User must grant scary permissions before seeing value.
 - Value cannot be previewed before payment.
@@ -1224,7 +1224,7 @@ Work:
 Exit criteria:
 
 - Autocomplete can write to SQLite.
-- Existing CSV/JSON exports still work.
+- Existing CSV/JSON/Markdown exports still work.
 
 ### Phase 2: First Validator CLI
 

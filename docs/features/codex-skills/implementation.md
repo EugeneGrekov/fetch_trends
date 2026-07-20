@@ -49,6 +49,15 @@ They should not:
 - treat autocomplete as demand volume
 - treat automated validation as proof of willingness to pay
 
+## 2026-07-20 Autocomplete Skill Alignment
+
+The autocomplete skill was updated after the discovery-modes feature so future agents:
+
+- run `--mode organic` first without modifiers
+- run `--mode modifier` only as a separate pass with an explicit allowlist
+- treat only exact Google-returned predictions as evidence
+- keep organic suggestions, modifier-only suggestions, and rejected noise separate
+
 ## Verification
 
 Verified in this implementation pass:
@@ -56,5 +65,7 @@ Verified in this implementation pass:
 - `npm test`
 - `npm run build`
 - `node dist/src/report.js --help`
+
+Autocomplete skill alignment was additionally validated with `quick_validate.py` for the autocomplete, validate, and report skills on 2026-07-20.
 
 The current repo also has unrelated in-progress `README.md` work, so this implementation note is the source-of-truth documentation added in this commit.

@@ -70,6 +70,8 @@ Do not say the business is validated unless there is real payment evidence.
 
 - The current pipeline is search-language-first. Say that clearly.
 - If evidence is only autocomplete-based, call it search-language evidence.
+- Treat organic autocomplete suggestions as stronger wording evidence than modifier-only suggestions.
+- Do not treat generated prefixes or modifier allowlist items as evidence unless Google returned them as exact predictions.
 - Do not invent external proof that was not collected locally.
 - Do not mutate database rows or rewrite stored reports.
 
