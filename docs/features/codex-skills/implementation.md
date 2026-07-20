@@ -58,6 +58,16 @@ The autocomplete skill was updated after the discovery-modes feature so future a
 - treat only exact Google-returned predictions as evidence
 - keep organic suggestions, modifier-only suggestions, and rejected noise separate
 
+## 2026-07-20 Search Automation Skill Alignment
+
+The validate, autocomplete, and report skills were updated so future agents:
+
+- check SerpAPI account credits before `--external true` validation runs
+- estimate full external search at up to 32 credits
+- choose full or low-credit collector scopes intentionally
+- surface SerpAPI quota, warning, blocked, and error states
+- keep autocomplete, SERP, Reddit, YouTube, review, and competitor evidence separate
+
 ## Verification
 
 Verified in this implementation pass:

@@ -92,6 +92,7 @@ Report:
 - Do not say autocomplete proves willingness to pay.
 - Do not treat generated prefixes as evidence; only exact Google-returned predictions are evidence.
 - Do not mix organic and modifier evidence. Organic suggestions are the primary natural-language signal.
+- Use `micro-business-validate` for SERP-backed external search; autocomplete alone does not check SerpAPI credits or run external collectors.
 - Do not run modifier mode without `--modifier` or `--modifiers`.
 - Do not rank awkward generated phrases as top suggestions.
 - Stop safely if Google shows CAPTCHA or anti-bot pages.

@@ -43,6 +43,8 @@ Focus on:
 - report metadata
 - stored markdown
 - structured score summary when present
+- external collector source/evidence/competitor counts when present
+- collector warnings, blocked runs, and error states when present
 
 ## Summarize
 
@@ -50,8 +52,10 @@ Return:
 
 - short verdict
 - evidence-backed reason
+- autocomplete and external-search artifacts used
 - top 3 risks
 - top 3 missing proofs
+- collector warnings or blocked/error states
 - best next action
 - the idea ID, job ID, and report ID used
 
@@ -61,6 +65,8 @@ Return:
 - Do not change stored reports.
 - Do not turn a report summary into a stronger claim than the evidence supports.
 - Keep organic suggestions, modifier-only suggestions, and rejected noise separate when the stored report includes those sections.
+- Keep autocomplete evidence separate from SERP, Reddit, YouTube, review, and competitor evidence.
+- Surface external collector warnings; do not convert blocked collectors into negative market evidence.
 - Keep facts, inference, and missing proof separate.
 
 ## Failure handling

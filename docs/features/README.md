@@ -12,6 +12,7 @@ Feature-specific work is organized one directory per phase. Each directory holds
 - [SQLite Foundation](sqlite-foundation/README.md)
 - [AI Runner](ai-runner/README.md)
 - [Codex Skills](codex-skills/README.md)
+- [Search Automation Skills](search-automation-skills/README.md)
 - [External Collectors](external-collectors/README.md)
 - [Web Interface](web-interface/README.md)
 - [Payment Test And SEO](payment-test-and-seo/README.md)
