@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autocomplete Bridge</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Fetch Trends</p>
+          <h1>Autocomplete Bridge</h1>
+        </div>
+        <div class="connection-status"><span id="status-dot"></span><span id="status-text">Disconnected</span></div>
+      </header>
+
+      <p id="message" class="message" hidden></p>
+
+      <section class="card">
+        <h2>Connection</h2>
+        <label>
+          Backend endpoint
+          <input id="endpoint" type="url" value="http://127.0.0.1:3099" spellcheck="false">
+        </label>
+        <label>
+          User
+          <input id="username" type="text" autocomplete="username" spellcheck="false">
+        </label>
+        <label>
+          Password
+          <input id="password" type="password" autocomplete="current-password" placeholder="Used once and never stored">
+        </label>
+        <div class="button-row">
+          <button id="connect" class="primary" type="button">Connect</button>
+          <button id="disconnect" type="button">Disconnect</button>
+          <button id="check" type="button">Check connection</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Mode</h2>
+        <fieldset id="modes">
+          <label class="mode-option"><input type="radio" name="mode" value="inactive"><span><strong>Inactive</strong><small>Connected, but does not detect requests.</small></span></label>
+          <label class="mode-option"><input type="radio" name="mode" value="automatic"><span><strong>Automatic</strong><small>Runs, inserts, and sends the report.</small></span></label>
+          <label class="mode-option"><input type="radio" name="mode" value="semi"><span><strong>Semi-automatic</strong><small>Runs in the background and waits for one-click insertion.</small></span></label>
+        </fieldset>
+      </section>
+
+      <section class="card">
+        <h2>ChatGPT instructions</h2>
+        <p class="help">Send the reason for autocomplete research and its exact JSON format into the selected ChatGPT tab.</p>
+        <button id="inject" type="button">Inject and send instructions</button>
+      </section>
+
+      <section class="card jobs-card">
+        <div class="section-heading">
+          <h2>Recent jobs</h2>
+          <button id="refresh" class="text-button" type="button">Refresh</button>
+        </div>
+        <div id="jobs" class="jobs"><p class="empty">No saved jobs.</p></div>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

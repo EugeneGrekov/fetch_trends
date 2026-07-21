@@ -77,7 +77,10 @@ export const LOCAL_PACKAGE_ENTRIES: LocalPackageEntry[] = [
   { source: '.codex/skills', required: true },
   { source: 'prompts', required: true },
   { source: 'config/collectors.json', required: true },
+  { source: 'config/autocomplete-users.example.json', required: true },
   { source: 'config/example.env', required: true },
+  { source: 'ecosystem.config.cjs', required: true },
+  { source: 'extension', required: true },
 ];
 
 const GENERATED_PATH_SEGMENTS = new Set([

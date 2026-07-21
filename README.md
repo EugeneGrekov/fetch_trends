@@ -13,6 +13,7 @@ Local Google Autocomplete research CLI for validating search language around mic
 ## Working Notes
 
 - `npm run autocomplete` runs the CLI directly from source.
+- `npm run autocomplete:pm2` builds and starts the local ChatGPT autocomplete bridge under PM2.
 - `npm run build` emits compiled output into `dist/`.
 - `npm test` runs the Vitest suite.
 

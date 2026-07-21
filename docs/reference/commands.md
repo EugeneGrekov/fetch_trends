@@ -160,6 +160,36 @@ Default tests and release checks must not call live external APIs, payment provi
 
 ## App
 
+### `npm run autocomplete:api`
+
+- Purpose: start the authenticated local API used by the private ChatGPT Chrome extension.
+- Example: `npm run autocomplete:api -- --host 127.0.0.1 --port 3099`
+- Inputs: `--host`, `--port`, `--db`, `--auth-config`, and `--results-dir`.
+- Outputs: a local HTTP API, SQLite bridge-job rows, and normal autocomplete result files for submitted jobs.
+- Live services: startup no; submitted jobs call Google Autocomplete through Playwright.
+- SQLite writes: yes.
+- File outputs: yes when jobs run.
+
+### `npm run autocomplete:user`
+
+- Purpose: create or replace one local bridge user with an interactively entered password.
+- Example: `npm run autocomplete:user -- add --username egrekov`
+- Inputs: `add`, `--username`, optional `--auth-config`, and two hidden password prompts.
+- Outputs: a local authentication config containing a salted password hash and no clear-text password.
+- Live services: no.
+- SQLite writes: no.
+- File outputs: yes, defaulting to `./config/autocomplete-users.json`.
+
+### `npm run autocomplete:pm2`
+
+- Purpose: build and start or restart the local autocomplete bridge under PM2.
+- Example: `npm run autocomplete:pm2`
+- Inputs: the PM2 ecosystem configuration and optional environment overrides.
+- Outputs: compiled JavaScript and one PM2-managed API process bound to `127.0.0.1:3099` by default.
+- Live services: startup no; submitted jobs call Google Autocomplete through Playwright.
+- SQLite writes: startup applies migrations; submitted jobs write bridge state.
+- File outputs: build output plus autocomplete artifacts when jobs run.
+
 ### `npm run web`
 
 - Purpose: start the local web interface.

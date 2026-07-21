@@ -5,6 +5,7 @@ This directory contains the TypeScript implementation for the local evidence-fir
 Main areas:
 
 - `ai/` loads prompts and runs bounded AI calls.
+- `autocomplete-bridge/` owns the authenticated extension API and durable sequential job queue.
 - `commands/` contains command handlers.
 - `db/` owns SQLite connection, migrations, schema, and repositories.
 - `utilities/` contains collectors and reusable evidence-gathering utilities.

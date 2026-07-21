@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Fetch Trends Autocomplete Bridge",
+  "description": "Connects structured ChatGPT autocomplete requests to the local Fetch Trends backend.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "alarms",
+    "clipboardWrite",
+    "notifications",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "icons": {
+    "128": "icons/icon.png"
+  },
+  "action": {
+    "default_title": "Fetch Trends Autocomplete Bridge",
+    "default_icon": "icons/icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["shared.js", "content-script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

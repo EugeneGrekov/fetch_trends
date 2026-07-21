@@ -1344,3 +1344,36 @@ npm run lint
 ```
 
 This creates the clean boundary required before adding SQLite, validator orchestration, Codex skills, or web UI.
+
+## 16. ChatGPT Autocomplete Bridge
+
+The bridge is a separate local adapter around the existing autocomplete
+utility. It does not change collection, prediction analysis, or Markdown
+rendering.
+
+```text
+ChatGPT tab
+  -> Manifest V3 content script
+  -> extension service worker
+  -> authenticated loopback API
+  -> durable SQLite bridge queue
+  -> existing autocomplete runner
+  -> Markdown result
+  -> original ChatGPT tab or saved orphan result
+```
+
+Module ownership:
+
+| Module | Responsibility |
+|---|---|
+| `extension/` | Request detection, global modes, per-tab toolbar state, composer insertion, notification, and local token storage. |
+| `src/autocomplete-bridge/` | Authentication, request identity, bridge-job persistence, sequential execution, long polling, and API transport. |
+| `src/utilities/autocomplete/` | Existing browser collection, analysis, resume artifacts, and report generation. |
+| `autocomplete_bridge_jobs` | Durable queue state, forever cache identity, output path, result Markdown, and failure details. |
+| `config/autocomplete-users.json` | Local salted password hashes and one hashed token per user. This file is generated and ignored. |
+
+The API binds to loopback by default and PM2 runs exactly one process. A job
+that was processing when the server stopped is marked failed on the next
+startup. Queued jobs remain eligible for sequential processing. The extension
+uses 30-second long polling plus a Chrome alarm fallback so service-worker
+suspension does not lose the durable job relationship.

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { openDatabase } from './connection.js';
 import {
   applyMigrations,
+  CHATGPT_AUTOCOMPLETE_BRIDGE_MIGRATION_ID,
   EXTERNAL_EVIDENCE_MIGRATION_ID,
   INITIAL_MIGRATION_ID,
   listAppliedMigrations,
@@ -34,6 +35,7 @@ describe('database migrations', () => {
         PIVOT_PERSEVERE_LOOP_MIGRATION_ID,
         SCHEDULED_REVALIDATION_MIGRATION_ID,
       ]);
+      expect(applied).toContain(CHATGPT_AUTOCOMPLETE_BRIDGE_MIGRATION_ID);
       expect(applyMigrations(db)).toEqual([]);
 
       const tables = db.prepare(`
@@ -46,6 +48,7 @@ describe('database migrations', () => {
       expect(tables.map((table) => table.name)).toEqual(
         expect.arrayContaining([
           'autocomplete_predictions',
+          'autocomplete_bridge_jobs',
           'competitors',
           'evidence',
           'experiment_decisions',
@@ -72,6 +75,7 @@ describe('database migrations', () => {
         expect.objectContaining({ id: POST_LAUNCH_MEASUREMENT_MIGRATION_ID }),
         expect.objectContaining({ id: PIVOT_PERSEVERE_LOOP_MIGRATION_ID }),
         expect.objectContaining({ id: SCHEDULED_REVALIDATION_MIGRATION_ID }),
+        expect.objectContaining({ id: CHATGPT_AUTOCOMPLETE_BRIDGE_MIGRATION_ID }),
       ]));
     } finally {
       db.close();

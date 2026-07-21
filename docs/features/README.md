@@ -27,6 +27,7 @@ Feature-specific work is organized one directory per phase. Each directory holds
 - [Quality Hardening](quality-hardening/README.md)
 - [Roadmap Governance](roadmap-governance/README.md)
 - [Backlog Prioritization](backlog-prioritization/README.md)
+- [ChatGPT Autocomplete Bridge](chatgpt-autocomplete-bridge/README.md)
 
 ## Roadmap
 - [Implementation order](../governance/implementation-order.md)
