@@ -28,6 +28,7 @@ export interface AutocompleteBridgeServiceOptions {
   resultsDir?: string;
   researchRunner?: AutocompleteResearchRunner;
   now?: () => Date;
+  logger?: (message: string) => void;
 }
 
 export class BridgeJobNotFoundError extends Error {}
@@ -37,6 +38,7 @@ export class AutocompleteBridgeService {
   readonly dbPath: string;
   readonly resultsDir: string;
   private readonly events = new EventEmitter();
+  private readonly logger: (message: string) => void;
   private readonly now: () => Date;
   private readonly researchRunner: AutocompleteResearchRunner;
   private workerPromise: Promise<void> | undefined;
@@ -46,6 +48,7 @@ export class AutocompleteBridgeService {
     this.resultsDir = options.resultsDir ?? './results/chatgpt-autocomplete';
     this.researchRunner = options.researchRunner ?? createAutocompleteResearchRunner(this.resultsDir);
     this.now = options.now ?? (() => new Date());
+    this.logger = options.logger ?? ((message) => process.stdout.write(`${message}\n`));
     this.events.setMaxListeners(0);
   }
 
@@ -61,6 +64,9 @@ export class AutocompleteBridgeService {
   ): Promise<{ cached: boolean; job: AutocompleteBridgeJob }> {
     const request = normalizeAutocompleteRequest(requestValue);
     const created = await this.withDb((db) => createOrGetBridgeJob(db, request, username, this.timestamp()));
+    if (created.created) {
+      this.log(`[autocomplete-bridge] job queued id=${created.job.id} user=${JSON.stringify(username)}`);
+    }
     this.wakeWorker();
 
     return {
@@ -89,6 +95,7 @@ export class AutocompleteBridgeService {
     }
 
     const job = await this.withDb((db) => retryBridgeJob(db, id, this.timestamp()));
+    this.log(`[autocomplete-bridge] job queued id=${job.id} reason=retry`);
     this.notify(job);
     this.wakeWorker();
     return job;
@@ -170,6 +177,7 @@ export class AutocompleteBridgeService {
         return;
       }
 
+      this.log(`[autocomplete-bridge] job started id=${job.id}`);
       this.notify(job);
 
       try {
@@ -181,14 +189,19 @@ export class AutocompleteBridgeService {
           result.outputPath,
           this.timestamp(),
         ));
+        this.log(`[autocomplete-bridge] job finished id=${completed.id} status=completed`);
         this.notify(completed);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         const failed = await this.withDb((db) => failBridgeJob(
           db,
           job.id,
-          error instanceof Error ? error.message : String(error),
+          errorMessage,
           this.timestamp(),
         ));
+        this.log(
+          `[autocomplete-bridge] job finished id=${failed.id} status=failed error=${JSON.stringify(errorMessage)}`,
+        );
         this.notify(failed);
       }
     }
@@ -212,6 +225,10 @@ export class AutocompleteBridgeService {
 
   private notify(job: AutocompleteBridgeJob): void {
     this.events.emit(this.eventName(job.id), job);
+  }
+
+  private log(message: string): void {
+    this.logger(message);
   }
 
   private eventName(id: number): string {

@@ -17,6 +17,34 @@ afterEach(async () => {
 });
 
 describe('autocomplete bridge service', () => {
+  it('logs queued, started, and finished without exposing seed text', async () => {
+    const paths = await tempPaths();
+    const logs: string[] = [];
+    const service = new AutocompleteBridgeService({
+      dbPath: paths.dbPath,
+      logger: (message) => logs.push(message),
+      researchRunner: async (job) => ({
+        markdown: '# Result\n',
+        outputPath: job.outputPath ?? 'result.csv',
+      }),
+      resultsDir: paths.resultsDir,
+    });
+    await service.initialize();
+
+    const submitted = await service.submit({
+      type: 'autocomplete_check',
+      seeds: ['private customer language'],
+    }, 'egrekov');
+    await waitForStatus(service, submitted.job.id, 'completed');
+
+    expect(logs).toEqual([
+      `[autocomplete-bridge] job queued id=${submitted.job.id} user="egrekov"`,
+      `[autocomplete-bridge] job started id=${submitted.job.id}`,
+      `[autocomplete-bridge] job finished id=${submitted.job.id} status=completed`,
+    ]);
+    expect(logs.join('\n')).not.toContain('private customer language');
+  });
+
   it('reuses the first canonical job and processes it once', async () => {
     const paths = await tempPaths();
     const calls: number[] = [];
@@ -81,9 +109,11 @@ describe('autocomplete bridge service', () => {
 
   it('leaves failures for manual retry', async () => {
     const paths = await tempPaths();
+    const logs: string[] = [];
     let attempt = 0;
     const service = new AutocompleteBridgeService({
       dbPath: paths.dbPath,
+      logger: (message) => logs.push(message),
       resultsDir: paths.resultsDir,
       researchRunner: async (job) => {
         attempt += 1;
@@ -98,12 +128,17 @@ describe('autocomplete bridge service', () => {
     const failed = await waitForStatus(service, submitted.job.id, 'failed');
 
     expect(failed.errorMessage).toBe('temporary collector failure');
+    expect(logs).toContain(
+      `[autocomplete-bridge] job finished id=${submitted.job.id} status=failed error="temporary collector failure"`,
+    );
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 20));
     expect((await service.getJob(submitted.job.id)).status).toBe('failed');
 
     await service.retry(submitted.job.id);
     const completed = await waitForStatus(service, submitted.job.id, 'completed');
     expect(completed.resultMarkdown).toBe('# Retried\n');
+    expect(logs).toContain(`[autocomplete-bridge] job queued id=${submitted.job.id} reason=retry`);
+    expect(logs.filter((message) => message.includes('job started')).length).toBe(2);
   });
 
   it('marks an interrupted processing job failed without changing queued jobs', async () => {

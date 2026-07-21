@@ -99,6 +99,10 @@ request returns the first stored job, including its first result.
 - Provides health, login, token check, submit, list, status, 30-second wait, and
   manual Retry endpoints.
 - Processes exactly one bridge job at a time and preserves queue order.
+- Writes concise job lifecycle messages to standard output when a job is
+  queued, started, completed, failed, or queued again for Retry. PM2 captures
+  these messages through `pm2 logs fetch-trends-autocomplete-api`. Logs include
+  job IDs and status but do not include seed text.
 - Reuses the existing Playwright collector, resume state, analysis, exporter,
   and exact Markdown file.
 - Preserves queued and completed rows after restart. A processing row is marked
@@ -110,7 +114,8 @@ request returns the first stored job, including its first result.
 - Request schema and canonical cache identity tests.
 - Salted password, token hashing, replacement, and no-clear-text persistence
   tests.
-- Queue order, single-worker, cache reuse, restart failure, and Retry tests.
+- Queue order, single-worker, cache reuse, lifecycle logging, restart failure,
+  and Retry tests.
 - HTTP login, authorization, submission, long-poll, completion, and cache tests
   with a fake runner.
 - Pure extension request parsing and instruction-contract tests.
@@ -120,7 +125,7 @@ request returns the first stored job, including its first result.
 
 ## Verification Results
 
-- `npm test -- --reporter=dot`: passed, 46 files and 146 tests.
+- `npm test -- --reporter=dot`: passed, 46 files and 147 tests.
 - `npm run build`: passed.
 - `npm run lint`: passed.
 - Extension JavaScript `node --check`: passed.
