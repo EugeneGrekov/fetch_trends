@@ -11,4 +11,6 @@ Keep command handlers thin:
 
 Update `docs/reference/commands.md` and command-doc tests whenever command options change.
 
-Current command handlers include `export-data`, `backup`, and `restore` alongside the existing validation, reporting, and maintenance commands.
+Current command handlers include `autocomplete-api`, `autocomplete-user`,
+`export-data`, `backup`, and `restore` alongside the existing validation,
+reporting, and maintenance commands.

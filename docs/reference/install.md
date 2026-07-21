@@ -6,6 +6,7 @@
 - npm.
 - A local shell that can run `npm` scripts.
 - Chromium for Playwright-powered autocomplete collection.
+- Google Chrome 120 or newer for the private Manifest V3 extension.
 
 This is a local-first tool. It does not require hosted infrastructure for the default SQLite, CLI, or web UI flows.
 
@@ -109,6 +110,48 @@ Example:
 npm run web -- --port 3010 --db ./data/fetch-trends.sqlite --ai false
 ```
 
+## Start The ChatGPT Autocomplete Bridge
+
+Create the first local user. The password is entered twice without echo and is
+stored only as a salted hash:
+
+```bash
+npm run autocomplete:user -- add --username egrekov
+```
+
+Build and start the API under PM2:
+
+```bash
+npm run autocomplete:pm2
+pm2 startup
+pm2 save
+```
+
+Run the platform-specific command printed by `pm2 startup`, then run `pm2 save`
+again. That enables restoration after a machine restart.
+
+The default API address is `http://127.0.0.1:3099`. Useful PM2 checks:
+
+```bash
+pm2 status fetch-trends-autocomplete-api
+pm2 logs fetch-trends-autocomplete-api
+pm2 restart fetch-trends-autocomplete-api
+```
+
+Load the extension:
+
+1. Open `chrome://extensions`.
+2. Enable Developer mode.
+3. Select **Load unpacked** and choose the repository's `extension/` directory.
+4. Pin the extension.
+5. In the connection window, enter `http://127.0.0.1:3099`, the local username,
+   and the password once.
+6. Select Automatic or Semi-automatic mode after the connection succeeds.
+
+The extension saves only the returned token. It does not save the password.
+The authentication file `config/autocomplete-users.json` and SQLite database
+are local generated files and are excluded from Git.
+
 ## Build A Local Package Directory
 
 After building:
@@ -117,4 +160,8 @@ After building:
 npm run package:local -- --out ./dist-package/fetch-trends
 ```
 
-The local package directory includes runtime code, docs, prompts, nonsecret config, and local Codex skills. It intentionally excludes generated/local data such as SQLite databases, results, artifacts, backups, exports, logs, `.env` files, and resume files.
+The local package directory includes runtime code, the private extension, PM2
+configuration, docs, prompts, nonsecret config, and local Codex skills. It
+intentionally excludes generated/local data such as authentication credentials,
+SQLite databases, results, artifacts, backups, exports, logs, `.env` files, and
+resume files.

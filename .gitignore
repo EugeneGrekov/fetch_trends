@@ -21,6 +21,7 @@ dist-ssr
 *.sw?
 .env
 .env*
+config/autocomplete-users.json
 deno.lock
 tmp/
 artifacts/

@@ -99,6 +99,9 @@ describe('release packaging support', () => {
     await expect(access(join(root, 'dist-package/fetch-trends/dist/src/cli.js'))).resolves.toBeUndefined();
     await expect(access(join(root, 'dist-package/fetch-trends/docs/reference/install.md'))).resolves.toBeUndefined();
     await expect(access(join(root, 'dist-package/fetch-trends/config/example.env'))).resolves.toBeUndefined();
+    await expect(access(join(root, 'dist-package/fetch-trends/config/autocomplete-users.example.json'))).resolves.toBeUndefined();
+    await expect(access(join(root, 'dist-package/fetch-trends/ecosystem.config.cjs'))).resolves.toBeUndefined();
+    await expect(access(join(root, 'dist-package/fetch-trends/extension/manifest.json'))).resolves.toBeUndefined();
     await expect(access(join(root, 'dist-package/fetch-trends/docs/report.resume.json'))).rejects.toThrow();
     await expect(access(join(root, 'dist-package/fetch-trends/results/local.csv'))).rejects.toThrow();
   });
@@ -115,7 +118,10 @@ async function createFakeProject(root: string): Promise<void> {
     ['.codex/skills/micro-business-autocomplete/SKILL.md', '# Skill\n'],
     ['prompts/final-report.md', 'Prompt\n'],
     ['config/collectors.json', '{}\n'],
+    ['config/autocomplete-users.example.json', '{"users":[]}\n'],
     ['config/example.env', 'FETCH_TRENDS_DB_PATH=\n'],
+    ['ecosystem.config.cjs', 'module.exports = { apps: [] };\n'],
+    ['extension/manifest.json', '{"manifest_version":3}\n'],
     ['results/local.csv', 'query\n'],
     ['artifacts/ideas/1/payment-test.json', '{}\n'],
     ['backups/fetch-trends.sqlite', ''],

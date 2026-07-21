@@ -24,6 +24,7 @@ import {
 import { createTempDatabase } from '../testing/temp-db.js';
 
 const REQUIRED_TABLES = [
+  'autocomplete_bridge_jobs',
   'autocomplete_predictions',
   'competitors',
   'evidence',

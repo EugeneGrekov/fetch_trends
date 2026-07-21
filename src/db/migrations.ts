@@ -6,6 +6,7 @@ export const EXTERNAL_EVIDENCE_MIGRATION_ID = '002_external_evidence_tables';
 export const POST_LAUNCH_MEASUREMENT_MIGRATION_ID = '003_post_launch_measurement_tables';
 export const PIVOT_PERSEVERE_LOOP_MIGRATION_ID = '004_pivot_persevere_loop_tables';
 export const SCHEDULED_REVALIDATION_MIGRATION_ID = '005_scheduled_revalidation_tables';
+export const CHATGPT_AUTOCOMPLETE_BRIDGE_MIGRATION_ID = '006_chatgpt_autocomplete_bridge';
 
 interface MigrationDefinition {
   id: string;
@@ -320,6 +321,31 @@ const MIGRATIONS: MigrationDefinition[] = [
       CREATE INDEX idx_revalidation_queue_status ON revalidation_queue (status);
       CREATE INDEX idx_revalidation_queue_task_type ON revalidation_queue (task_type);
       CREATE INDEX idx_revalidation_queue_run_id ON revalidation_queue (run_id);
+    `,
+  },
+  {
+    id: CHATGPT_AUTOCOMPLETE_BRIDGE_MIGRATION_ID,
+    sql: `
+      CREATE TABLE autocomplete_bridge_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        request_key TEXT NOT NULL UNIQUE,
+        created_by TEXT NOT NULL,
+        seeds_json TEXT NOT NULL,
+        modifiers_json TEXT NOT NULL,
+        status TEXT NOT NULL,
+        output_path TEXT,
+        result_markdown TEXT,
+        error_message TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        started_at TEXT,
+        completed_at TEXT
+      );
+
+      CREATE INDEX idx_autocomplete_bridge_jobs_status_id
+        ON autocomplete_bridge_jobs (status, id);
+      CREATE INDEX idx_autocomplete_bridge_jobs_created_by_id
+        ON autocomplete_bridge_jobs (created_by, id DESC);
     `,
   },
 ];

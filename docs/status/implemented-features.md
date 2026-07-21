@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file audits what appears implemented in this checkout as of 2026-07-08.
+This file audits what appears implemented in this checkout as of 2026-07-21.
 
 The audit is based on:
 
@@ -35,12 +35,16 @@ The audit is based on:
 | Quality hardening | `verified` | migration, command-doc, release, and fixture tests; `docs/features/quality-hardening/implementation.md` | Regression coverage and deterministic checks were expanded. |
 | Roadmap governance | `verified` | `docs/governance/roadmap-governance.md`, `scripts/check-roadmap.ts`, `npm run roadmap:check`, `docs/features/roadmap-governance/implementation.md` | Phase status rules and roadmap checks exist. |
 | Backlog prioritization | `verified` | `docs/governance/backlog-prioritization.md`, `docs/governance/templates/backlog-item.md`, `scripts/check-backlog.ts`, `npm run backlog:check`, `docs/features/backlog-prioritization/implementation.md` | Future work can be scored before planning or implementation. |
+| ChatGPT autocomplete bridge | `verified` | `extension/`, `src/autocomplete-bridge/`, `src/commands/autocomplete-api.ts`, `ecosystem.config.cjs`, `docs/features/chatgpt-autocomplete-bridge/implementation.md` | Private Chrome extension submits strict data-only requests to a token-authenticated sequential backend and returns cached Markdown reports. |
 
 ## Commands Present
 
 The current command surface in `package.json` includes:
 
 - `npm run autocomplete`
+- `npm run autocomplete:api`
+- `npm run autocomplete:user`
+- `npm run autocomplete:pm2`
 - `npm run db`
 - `npm run validate`
 - `npm run report`

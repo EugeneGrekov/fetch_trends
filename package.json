@@ -7,6 +7,8 @@
   "bin": {
     "fetch-trends-backup": "./dist/src/backup.js",
     "fetch-trends-autocomplete": "./dist/src/cli.js",
+    "fetch-trends-autocomplete-api": "./dist/src/commands/autocomplete-api.js",
+    "fetch-trends-autocomplete-user": "./dist/src/commands/autocomplete-user.js",
     "fetch-trends-db": "./dist/src/db.js",
     "fetch-trends-decide": "./dist/src/decide.js",
     "fetch-trends-diagnose": "./dist/src/diagnose.js",
@@ -24,6 +26,9 @@
   },
   "scripts": {
     "autocomplete": "tsx src/cli.ts",
+    "autocomplete:api": "tsx src/commands/autocomplete-api.ts",
+    "autocomplete:pm2": "npm run build && pm2 startOrRestart ecosystem.config.cjs --update-env",
+    "autocomplete:user": "tsx src/commands/autocomplete-user.ts",
     "backlog:check": "tsx scripts/check-backlog.ts",
     "backup": "tsx src/backup.ts",
     "db": "tsx src/db.ts",
@@ -60,6 +65,7 @@
     "@types/node": "^24.10.1",
     "eslint": "^9.39.2",
     "globals": "^16.5.0",
+    "pm2": "^7.0.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0",
