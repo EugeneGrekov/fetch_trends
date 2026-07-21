@@ -14,7 +14,9 @@ and job UI state in `chrome.storage.local`. It never stores the password.
 2. Enable Developer mode.
 3. Select **Load unpacked**.
 4. Choose this `extension/` directory.
-5. Pin the extension and complete the connection window.
+5. Reload an open `chatgpt.com` tab, or open a new one.
+6. Pin the extension and click its toolbar icon.
+7. Complete the connection form in the drawer over the right side of ChatGPT.
 
 The extension requests additional endpoint permission from the Connect button
 when the configured backend is not the default loopback address.

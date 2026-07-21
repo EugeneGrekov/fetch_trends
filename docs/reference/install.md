@@ -144,9 +144,11 @@ Load the extension:
 2. Enable Developer mode.
 3. Select **Load unpacked** and choose the repository's `extension/` directory.
 4. Pin the extension.
-5. In the connection window, enter `http://127.0.0.1:3099`, the local username,
-   and the password once.
-6. Select Automatic or Semi-automatic mode after the connection succeeds.
+5. Reload an existing `chatgpt.com` tab, or open a new one.
+6. On that ChatGPT tab, click the extension icon. A settings drawer opens over
+   the right side of the page.
+7. Enter `http://127.0.0.1:3099`, the local username, and the password once.
+8. Select Automatic or Semi-automatic mode after the connection succeeds.
 
 The extension saves only the returned token. It does not save the password.
 The authentication file `config/autocomplete-users.json` and SQLite database

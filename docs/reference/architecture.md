@@ -1366,7 +1366,7 @@ Module ownership:
 
 | Module | Responsibility |
 |---|---|
-| `extension/` | Request detection, global modes, per-tab toolbar state, composer insertion, notification, and local token storage. |
+| `extension/` | Request detection, extension-owned in-page settings drawer, global modes, per-tab toolbar state, composer insertion, notification, and local token storage. |
 | `src/autocomplete-bridge/` | Authentication, request identity, bridge-job persistence, sequential execution, long polling, and API transport. |
 | `src/utilities/autocomplete/` | Existing browser collection, analysis, resume artifacts, and report generation. |
 | `autocomplete_bridge_jobs` | Durable queue state, forever cache identity, output path, result Markdown, and failure details. |

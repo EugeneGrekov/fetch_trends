@@ -12,8 +12,8 @@ semi-automatic mode.
 ## Files And Modules Added Or Changed
 
 - `extension/` contains the Manifest V3 extension, request parser, service
-  worker, ChatGPT content script, configuration and job window, toolbar icon,
-  and installation README.
+  worker, ChatGPT content script, in-page configuration and job drawer,
+  toolbar icon, and installation README.
 - `src/autocomplete-bridge/` contains request normalization, authentication,
   bridge-job persistence, sequential execution, the autocomplete runner
   adapter, HTTP API, and tests.
@@ -83,11 +83,14 @@ request returns the first stored job, including its first result.
   and clicks Send without foregrounding a background tab.
 - Semi-automatic mode keeps working in the background, notifies when ready, and
   uses the first toolbar click to replace the composer without Send. The next
-  click opens the menu.
+  click opens the settings drawer.
 - Closing a source tab leaves the job running and makes its completed result an
   orphaned saved result with a clipboard action.
-- Includes a menu action that sends the combined purpose and exact-format
+- Includes a drawer action that sends the combined purpose and exact-format
   instruction.
+- Opens configuration in an extension-owned iframe drawer over the current
+  ChatGPT page. It no longer creates a separate Chrome window, and clicking the
+  backdrop, the close button, or Escape closes the drawer.
 - Handles recognizable malformed requests after streaming ends, with one
   corrective instruction allowed between valid requests.
 - Persists job relationships and uses a 30-second Chrome alarm as a fallback if
@@ -119,13 +122,15 @@ request returns the first stored job, including its first result.
 - HTTP login, authorization, submission, long-poll, completion, and cache tests
   with a fake runner.
 - Pure extension request parsing and instruction-contract tests.
+- Extension UI contract tests for the ChatGPT-only drawer resources and the
+  absence of separate-window creation.
 - Migration, command-documentation, and local release packaging coverage.
 - Existing Playwright fallback tests now generate platform-correct executable
   fixtures so the full suite is portable.
 
 ## Verification Results
 
-- `npm test -- --reporter=dot`: passed, 46 files and 147 tests.
+- `npm test -- --reporter=dot`: passed, 47 files and 149 tests.
 - `npm run build`: passed.
 - `npm run lint`: passed.
 - Extension JavaScript `node --check`: passed.
@@ -140,7 +145,9 @@ restricted implementation sandbox because `tsx` and PM2 cannot create their
 local IPC sockets there. Its test, build, lint, migration, documentation, bin,
 and package checks were run directly and passed. PM2 configuration was checked
 statically. A real PM2 start and live Chrome interaction remain operator-side
-manual checks on macOS.
+manual checks on macOS. The workspace browser smoke test could not run because
+its Chromium binary was absent and the restricted network returned an empty
+browser archive when Playwright attempted to install it.
 
 ## Known Limitations
 

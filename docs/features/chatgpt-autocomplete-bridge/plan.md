@@ -80,7 +80,8 @@ docs/features/chatgpt-autocomplete-bridge/
    completed, and already failed jobs.
 8. Add a PM2 ecosystem configuration and operator commands.
 9. Add the extension service worker, content script, toolbar state colors,
-   settings window, job list, notifications, and ChatGPT composer integration.
+   in-page settings drawer, job list, notifications, and ChatGPT composer
+   integration.
 10. Add automated backend and protocol tests plus operator documentation.
 
 ## Data / API / CLI Contracts
@@ -144,7 +145,7 @@ pm2 save
   result, waits for current ChatGPT generation to finish, and clicks Send.
 - `semi-automatic`: detects, submits, and long-polls. The first toolbar click
   when ready replaces the composer without sending. The next click opens the
-  menu.
+  settings drawer over the current ChatGPT page.
 
 The selected mode is global across all ChatGPT tabs. The first connection
 starts inactive. Later connections restore the previous selected mode.
@@ -176,19 +177,23 @@ starts inactive. Later connections restore the previous selected mode.
 - A semi-automatic result in a background tab creates a desktop notification.
   Clicking it activates that tab but does not insert or send the result.
 - If the source tab closes, the backend job continues. Its result remains in
-  the menu as an orphaned saved result. Clicking an orphaned result copies its
-  Markdown to the clipboard.
+  the settings drawer as an orphaned saved result. Clicking an orphaned result
+  copies its Markdown to the clipboard.
+- A normal toolbar click opens a right-side settings drawer inside the current
+  ChatGPT page. It does not create a separate Chrome window or toolbar popup.
+- The drawer uses an extension-owned iframe so its connection fields are not
+  part of the ChatGPT page DOM.
 
 ### Instruction and malformed recovery
 
-- A menu action injects and sends one combined instruction explaining why
+- A drawer action injects and sends one combined instruction explaining why
   autocomplete research is used and the exact request JSON format.
 - Instructions are not automatically injected in every new chat.
 - A recognizable but malformed `autocomplete_check` is handled only after the
   assistant stops streaming.
 - Automatic mode injects and sends a corrective instruction.
 - Semi-automatic mode shows red. The first toolbar click inserts the corrective
-  instruction without sending; the next click opens the menu.
+  instruction without sending; the next click opens the settings drawer.
 - At most one corrective instruction is allowed between valid autocomplete
   requests. A valid request resets that allowance.
 - Text that does not contain a recognizable `autocomplete_check` is ignored.
@@ -241,6 +246,7 @@ semi-automatic request in separate ChatGPT tabs.
 - Automatic and semi-automatic completion follow their specified insertion and
   Send behavior.
 - Toolbar state reflects the current ChatGPT tab.
+- Configuration opens in a drawer over ChatGPT without a separate window.
 - PM2 can run the built API on `127.0.0.1:3099`.
 - Existing autocomplete CLI behavior and tests remain compatible.
 

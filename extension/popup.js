@@ -3,6 +3,8 @@
 
   const params = new URLSearchParams(location.search);
   const tabId = Number(params.get('tabId')) || undefined;
+  const embedded = params.get('embedded') === '1';
+  document.documentElement.classList.toggle('embedded', embedded);
   const elements = {
     statusDot: document.querySelector('#status-dot'),
     statusText: document.querySelector('#status-text'),
@@ -17,6 +19,7 @@
     inject: document.querySelector('#inject'),
     refresh: document.querySelector('#refresh'),
     jobs: document.querySelector('#jobs'),
+    close: document.querySelector('#close'),
   };
   let snapshot;
 
@@ -25,9 +28,15 @@
   elements.check.addEventListener('click', () => void withBusy(elements.check, checkConnection));
   elements.inject.addEventListener('click', () => void withBusy(elements.inject, injectInstructions));
   elements.refresh.addEventListener('click', () => void withBusy(elements.refresh, refreshJobs));
+  elements.close.addEventListener('click', closePanel);
   elements.modes.addEventListener('change', (event) => {
     if (event.target instanceof HTMLInputElement && event.target.name === 'mode') {
       void setMode(event.target.value);
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (embedded && event.key === 'Escape') {
+      closePanel();
     }
   });
 
@@ -216,5 +225,15 @@
   function clearMessage() {
     elements.message.hidden = true;
     elements.message.textContent = '';
+  }
+
+  function closePanel() {
+    if (!embedded) {
+      return;
+    }
+    window.parent.postMessage({
+      source: 'fetch-trends-autocomplete-bridge',
+      type: 'settings:close',
+    }, '*');
   }
 })();
