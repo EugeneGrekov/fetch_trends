@@ -17,6 +17,9 @@
     check: document.querySelector('#check'),
     modes: document.querySelector('#modes'),
     inject: document.querySelector('#inject'),
+    trendsPermission: document.querySelector('#trends-permission'),
+    trendsPermissionStatus: document.querySelector('#trends-permission-status'),
+    bundles: document.querySelector('#bundles'),
     refresh: document.querySelector('#refresh'),
     jobs: document.querySelector('#jobs'),
     close: document.querySelector('#close'),
@@ -27,6 +30,10 @@
   elements.disconnect.addEventListener('click', () => void withBusy(elements.disconnect, disconnect));
   elements.check.addEventListener('click', () => void withBusy(elements.check, checkConnection));
   elements.inject.addEventListener('click', () => void withBusy(elements.inject, injectInstructions));
+  elements.trendsPermission.addEventListener('click', () => void withBusy(
+    elements.trendsPermission,
+    allowTrendsScreenshots,
+  ));
   elements.refresh.addEventListener('click', () => void withBusy(elements.refresh, refreshJobs));
   elements.close.addEventListener('click', closePanel);
   elements.modes.addEventListener('change', (event) => {
@@ -100,6 +107,17 @@
     render();
   }
 
+  async function allowTrendsScreenshots() {
+    clearMessage();
+    const granted = await chrome.permissions.request({ origins: ['<all_urls>'] });
+    if (!granted) {
+      throw new Error('Chrome screenshot permission was not granted.');
+    }
+    snapshot = await send({ type: 'trends:permission-changed', tabId });
+    showMessage('Google Trends screenshots are enabled.', 'success');
+    render();
+  }
+
   function render() {
     elements.statusDot.classList.toggle('connected', Boolean(snapshot.connected));
     elements.statusText.textContent = snapshot.connected ? 'Connected' : 'Disconnected';
@@ -110,13 +128,100 @@
     elements.check.disabled = !snapshot.connected;
     elements.modes.disabled = !snapshot.connected;
     elements.inject.disabled = !tabId;
+    elements.trendsPermission.hidden = Boolean(snapshot.trendsCaptureAllowed);
+    elements.trendsPermissionStatus.textContent = snapshot.trendsCaptureAllowed
+      ? 'Enabled. The extension captures only its temporary Google Trends tab.'
+      : 'Allow once so Chrome can capture the temporary Google Trends tab.';
 
     const selectedMode = document.querySelector(`input[name="mode"][value="${snapshot.mode}"]`);
     if (selectedMode) {
       selectedMode.checked = true;
     }
 
+    renderBundles(snapshot.bundles || []);
     renderJobs(snapshot.jobs || []);
+  }
+
+  function renderBundles(bundles) {
+    const trendsBundles = bundles.filter((bundle) => bundle.trends?.requested);
+    elements.bundles.replaceChildren();
+    if (trendsBundles.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'empty';
+      empty.textContent = 'No Google Trends requests.';
+      elements.bundles.append(empty);
+      return;
+    }
+
+    for (const bundle of trendsBundles.slice(0, 10)) {
+      const container = document.createElement('article');
+      container.className = 'job';
+      const top = document.createElement('div');
+      top.className = 'job-top';
+      const title = document.createElement('p');
+      title.className = 'job-title';
+      title.title = bundle.trends.url;
+      title.textContent = trendsLabel(bundle.trends.url);
+      const status = bundleStatus(bundle);
+      const badge = document.createElement('span');
+      badge.className = `badge ${status}`;
+      badge.textContent = status;
+      top.append(title, badge);
+      container.append(top);
+
+      const errorMessage = bundle.deliveryError || bundle.trends.errorMessage || bundle.autocomplete.errorMessage;
+      if (errorMessage) {
+        const error = document.createElement('p');
+        error.className = 'job-error';
+        error.textContent = errorMessage;
+        container.append(error);
+      }
+
+      if (!bundle.delivered && (
+        bundle.deliveryError
+        || bundle.autocomplete.status === 'failed'
+        || ['failed', 'attention', 'permission'].includes(bundle.trends.status)
+      )) {
+        const actions = document.createElement('div');
+        actions.className = 'job-actions';
+        actions.append(makeButton('Retry', async () => {
+          snapshot = await send({ type: 'bundle:retry', bundleKey: bundle.key, tabId });
+          snapshot = await send({ type: 'popup:get', tabId });
+          render();
+        }));
+        container.append(actions);
+      }
+      elements.bundles.append(container);
+    }
+  }
+
+  function trendsLabel(urlValue) {
+    try {
+      const values = new URL(urlValue).searchParams.get('q') || '';
+      return values || 'Google Trends request';
+    } catch {
+      return 'Google Trends request';
+    }
+  }
+
+  function bundleStatus(bundle) {
+    if (bundle.delivered) {
+      return 'delivered';
+    }
+    if (bundle.deliveryError || bundle.autocomplete.status === 'failed' || bundle.trends.status === 'failed') {
+      return 'failed';
+    }
+    if (['attention', 'permission'].includes(bundle.trends.status)) {
+      return bundle.trends.status;
+    }
+    const requested = [bundle.autocomplete, bundle.trends].filter((operation) => operation.requested);
+    if (bundle.finalized && requested.length > 0 && requested.every((operation) => operation.status === 'completed')) {
+      return 'ready';
+    }
+    if (requested.some((operation) => ['processing', 'loading', 'capturing'].includes(operation.status))) {
+      return 'processing';
+    }
+    return 'queued';
   }
 
   function renderJobs(jobs) {

@@ -2,6 +2,7 @@
   'use strict';
 
   const ALLOWED_KEYS = new Set(['type', 'seeds', 'modifiers']);
+  const GOOGLE_TRENDS_URL_PATTERN = /https:\/\/trends\.google\.com\/[^\s<>"']+/gi;
 
   const AUTOCOMPLETE_INSTRUCTION = [
     'Use autocomplete research when it would help validate the exact language people type into Google, rather than relying only on abstract wording or assumptions.',
@@ -17,6 +18,10 @@
     '```',
     '',
     '`seeds` is required. `modifiers` is optional. When modifiers are included, list only the exact modifiers to probe. Do not add a version, request ID, metadata, comments, or any other keys. The extension will run the long autocomplete check and return its Markdown report to this chat.',
+    '',
+    'When a direct Google Trends comparison would help, include one ready-to-open HTTPS URL beginning with https://trends.google.com/explore and containing a non-empty q parameter.',
+    'No JSON is needed for Google Trends. Wait for the returned screenshot before interpreting the comparison.',
+    'Treat Google Trends values from 0 to 100 as relative search interest, never as absolute search volume.',
   ].join('\n');
 
   const CORRECTION_INSTRUCTION = [
@@ -118,10 +123,81 @@
     return { ok: true, values };
   }
 
+  function classifyGoogleTrendsUrl(value) {
+    let candidate = String(value || '').trim();
+    while (/[\])}>.,;!?]$/.test(candidate)) {
+      candidate = candidate.slice(0, -1);
+    }
+
+    let url;
+    try {
+      url = new URL(candidate);
+    } catch {
+      return { kind: 'none' };
+    }
+
+    const path = url.pathname.replace(/\/+$/, '');
+    if (
+      url.protocol !== 'https:'
+      || url.hostname.toLowerCase() !== 'trends.google.com'
+      || !/(^|\/)explore$/i.test(path)
+      || !url.searchParams.get('q')?.trim()
+    ) {
+      return { kind: 'none' };
+    }
+
+    return { kind: 'valid', url: candidate };
+  }
+
+  function findFirstGoogleTrendsUrl(values) {
+    for (const value of values || []) {
+      const source = String(value || '');
+      const direct = classifyGoogleTrendsUrl(source);
+      if (direct.kind === 'valid') {
+        return direct;
+      }
+
+      for (const match of source.matchAll(GOOGLE_TRENDS_URL_PATTERN)) {
+        const classification = classifyGoogleTrendsUrl(match[0]);
+        if (classification.kind === 'valid') {
+          return classification;
+        }
+      }
+    }
+    return { kind: 'none' };
+  }
+
+  function calculateCropRegion({ imageWidth, imageHeight, viewportWidth, viewportHeight, rect, padding = 0 }) {
+    const scaleX = imageWidth / viewportWidth;
+    const scaleY = imageHeight / viewportHeight;
+    const left = Math.max(0, Math.floor((rect.left - padding) * scaleX));
+    const top = Math.max(0, Math.floor((rect.top - padding) * scaleY));
+    const right = Math.min(imageWidth, Math.ceil((rect.right + padding) * scaleX));
+    const bottom = Math.min(imageHeight, Math.ceil((rect.bottom + padding) * scaleY));
+    return {
+      x: left,
+      y: top,
+      width: Math.max(1, right - left),
+      height: Math.max(1, bottom - top),
+    };
+  }
+
+  function isResponseBundleReady(bundle) {
+    if (!bundle?.finalized || bundle.delivered) {
+      return false;
+    }
+    const operations = [bundle.autocomplete, bundle.trends].filter((operation) => operation?.requested);
+    return operations.length > 0 && operations.every((operation) => operation.status === 'completed');
+  }
+
   globalObject.AutocompleteBridgeShared = Object.freeze({
     AUTOCOMPLETE_INSTRUCTION,
     CORRECTION_INSTRUCTION,
     classifyCodeBlock,
     classifyCodeBlocks,
+    classifyGoogleTrendsUrl,
+    findFirstGoogleTrendsUrl,
+    calculateCropRegion,
+    isResponseBundleReady,
   });
 })(globalThis);

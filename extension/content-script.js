@@ -5,6 +5,7 @@
   const ASSISTANT_SELECTOR = '[data-message-author-role="assistant"]';
   const SETTINGS_MESSAGE_SOURCE = 'fetch-trends-autocomplete-bridge';
   const processedMessages = new WeakSet();
+  const messageStates = new WeakMap();
   const candidateMessages = new Set();
   let connected = false;
   let mode = 'inactive';
@@ -79,7 +80,21 @@
       void runMessageAction(async () => {
         hideOverlay();
         hideSettingsPanel();
-        await replaceComposerAndMaybeSend(message.markdown, true);
+        await deliverComposerPayload(message.markdown, '', true, true);
+      }, sendResponse);
+      return true;
+    }
+
+    if (message.type === 'bundle:deliver') {
+      void runMessageAction(async () => {
+        hideSettingsPanel();
+        await deliverComposerPayload(
+          message.markdown || '',
+          message.imageDataUrl || '',
+          Boolean(message.send),
+          true,
+        );
+        hideOverlay();
       }, sendResponse);
       return true;
     }
@@ -87,7 +102,7 @@
     if (message.type === 'composer:insert') {
       void runMessageAction(async () => {
         hideSettingsPanel();
-        await replaceComposerAndMaybeSend(message.text, Boolean(message.send));
+        await deliverComposerPayload(message.text, '', Boolean(message.send));
       }, sendResponse);
       return true;
     }
@@ -200,38 +215,76 @@
         continue;
       }
 
-      const classification = shared.classifyCodeBlocks(readCodeBlocks(message));
-      if (classification.kind === 'none') {
-        continue;
-      }
+      const messageState = ensureMessageState(message);
+      const classification = messageState.autocompleteHandled
+        ? { kind: 'none' }
+        : shared.classifyCodeBlocks(readCodeBlocks(message));
 
       if (classification.kind === 'valid') {
-        processedMessages.add(message);
-        candidateMessages.delete(message);
+        messageState.autocompleteHandled = true;
+        messageState.hasAutocomplete = true;
         await chrome.runtime.sendMessage({
           type: 'request:detected',
+          responseKey: messageState.responseKey,
           request: classification.request,
         }).catch(() => undefined);
-        continue;
       }
 
       if (isChatGenerating()) {
         continue;
       }
 
+      if (classification.kind === 'malformed') {
+        messageState.autocompleteHandled = true;
+        await chrome.runtime.sendMessage({
+          type: 'request:malformed',
+          reason: classification.reason,
+        }).catch(() => undefined);
+      }
+
+      const trends = findGoogleTrendsUrl(message);
+      await chrome.runtime.sendMessage({
+        type: 'response:finalized',
+        responseKey: messageState.responseKey,
+        trendsUrl: trends?.url || null,
+      }).catch(() => undefined);
       processedMessages.add(message);
       candidateMessages.delete(message);
-      await chrome.runtime.sendMessage({
-        type: 'request:malformed',
-        reason: classification.reason,
-      }).catch(() => undefined);
     }
+  }
+
+  function ensureMessageState(message) {
+    let messageState = messageStates.get(message);
+    if (!messageState) {
+      messageState = {
+        responseKey: crypto.randomUUID(),
+        autocompleteHandled: false,
+        hasAutocomplete: false,
+      };
+      messageStates.set(message, messageState);
+    }
+    return messageState;
   }
 
   function readCodeBlocks(message) {
     return [...message.querySelectorAll('pre')]
       .map((pre) => (pre.querySelector('code') || pre).textContent || '')
       .filter(Boolean);
+  }
+
+  function findGoogleTrendsUrl(message) {
+    const candidates = [];
+    const walker = document.createTreeWalker(message, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node instanceof HTMLAnchorElement) {
+        candidates.push(node.href);
+      } else if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+        candidates.push(node.textContent);
+      }
+    }
+    const classification = shared.findFirstGoogleTrendsUrl(candidates);
+    return classification.kind === 'valid' ? classification : undefined;
   }
 
   function isChatGenerating() {
@@ -360,15 +413,26 @@
     settingsFrame = undefined;
   }
 
-  async function replaceComposerAndMaybeSend(text, shouldSend) {
-    if (typeof text !== 'string' || !text) {
-      throw new Error('There is no text to insert.');
+  async function deliverComposerPayload(text, imageDataUrl, shouldSend, respectAutomaticMode = false) {
+    if (!text && !imageDataUrl) {
+      throw new Error('There is no result to insert.');
+    }
+    await waitForValue(
+      () => isChatGenerating() ? undefined : true,
+      60 * 60 * 1_000,
+      'ChatGPT did not finish its current response.',
+    );
+    const composer = await waitForValue(findComposer, 30_000, 'ChatGPT composer was not found.');
+    await clearComposerAttachments(composer);
+    replaceComposerText(composer, text || '');
+    if (imageDataUrl) {
+      await attachImage(composer, imageDataUrl);
     }
 
-    const composer = await waitForValue(findComposer, 30_000, 'ChatGPT composer was not found.');
-    replaceComposerText(composer, text);
-
     if (!shouldSend) {
+      return;
+    }
+    if (respectAutomaticMode && mode !== 'automatic') {
       return;
     }
 
@@ -379,7 +443,78 @@
       const button = findSendButton();
       return button && !button.disabled ? button : undefined;
     }, 60 * 60 * 1_000, 'ChatGPT Send button did not become ready.');
+    if (respectAutomaticMode && mode !== 'automatic') {
+      return;
+    }
     sendButton.click();
+  }
+
+  async function attachImage(composer, imageDataUrl) {
+    const response = await fetch(imageDataUrl);
+    const blob = await response.blob();
+    if (!blob.type.startsWith('image/')) {
+      throw new Error('The Google Trends result is not an image.');
+    }
+
+    const file = new File([blob], 'google-trends.png', { type: blob.type || 'image/png' });
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    const existingPreviews = new Set(findAttachmentPreviews(composer));
+    const input = findFileInput();
+    if (input) {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'files')?.set;
+      setter?.call(input, transfer.files);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+      composer.dispatchEvent(new DragEvent('dragenter', { bubbles: true, dataTransfer: transfer }));
+      composer.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: transfer }));
+      composer.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: transfer }));
+    }
+
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1_000));
+    await waitForValue(() => {
+      return findAttachmentPreviews(composer).some((preview) => !existingPreviews.has(preview))
+        ? true
+        : undefined;
+    }, 60_000, 'ChatGPT did not attach the Google Trends screenshot.');
+  }
+
+  function findFileInput() {
+    const selectors = [
+      'form input[type="file"][accept*="image"]',
+      'form input[type="file"]',
+      'input[type="file"][accept*="image"]',
+    ];
+    return selectors.map((selector) => document.querySelector(selector)).find(Boolean);
+  }
+
+  async function clearComposerAttachments(composer) {
+    const form = composer.closest('form') || composer.parentElement;
+    const buttons = [...(form?.querySelectorAll([
+      'button[aria-label*="remove attachment" i]',
+      'button[aria-label*="remove file" i]',
+    ].join(',')) || [])];
+    for (const button of buttons) {
+      button.click();
+    }
+    if (buttons.length > 0) {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
+    }
+  }
+
+  function findAttachmentPreviews(composer) {
+    const form = composer.closest('form') || composer.parentElement;
+    return [...(form?.querySelectorAll([
+      '[data-testid*="attachment" i]',
+      '[data-testid*="file" i]',
+      'button[aria-label*="remove attachment" i]',
+      'button[aria-label*="remove file" i]',
+      'img[alt*="uploaded" i]',
+      'img[src^="blob:"]',
+      '[class*="attachment" i] img',
+      '[class*="file" i] img',
+    ].join(',')) || [])];
   }
 
   function findComposer() {
@@ -420,6 +555,16 @@
         bubbles: true,
         data: text,
         inputType: 'insertText',
+      }));
+      return;
+    }
+
+    if (!text) {
+      composer.replaceChildren();
+      composer.dispatchEvent(new InputEvent('input', {
+        bubbles: true,
+        data: null,
+        inputType: 'deleteContentBackward',
       }));
       return;
     }

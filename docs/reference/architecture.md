@@ -1354,19 +1354,22 @@ rendering.
 ```text
 ChatGPT tab
   -> Manifest V3 content script
-  -> extension service worker
-  -> authenticated loopback API
-  -> durable SQLite bridge queue
-  -> existing autocomplete runner
-  -> Markdown result
-  -> original ChatGPT tab or saved orphan result
+  -> response bundle in the extension service worker
+     -> Autocomplete: authenticated loopback API
+        -> durable SQLite bridge queue
+        -> existing autocomplete runner
+        -> Markdown result
+     -> Google Trends: global extension-local queue
+        -> temporary Trends tab
+        -> cropped PNG of controls and Interest over time
+  -> one complete result returned to the original ChatGPT tab
 ```
 
 Module ownership:
 
 | Module | Responsibility |
 |---|---|
-| `extension/` | Request detection, extension-owned in-page settings drawer, global modes, per-tab toolbar state, composer insertion, notification, and local token storage. |
+| `extension/` | Autocomplete JSON and Trends URL detection, per-response result bundles, one-at-a-time Trends capture, extension-owned in-page settings drawer, global modes, per-tab toolbar state, composer text/image insertion, notification, and local token storage. |
 | `src/autocomplete-bridge/` | Authentication, request identity, bridge-job persistence, sequential execution, long polling, and API transport. |
 | `src/utilities/autocomplete/` | Existing browser collection, analysis, resume artifacts, and report generation. |
 | `autocomplete_bridge_jobs` | Durable queue state, forever cache identity, output path, result Markdown, and failure details. |
@@ -1377,3 +1380,20 @@ that was processing when the server stopped is marked failed on the next
 startup. Queued jobs remain eligible for sequential processing. The extension
 uses 30-second long polling plus a Chrome alarm fallback so service-worker
 suspension does not lose the durable job relationship.
+
+The Google Trends path does not call the backend. It starts only after the
+assistant response finishes streaming and processes one capture globally at a
+time. The temporary tab uses the current Chrome profile. The extension waits
+for the Explore controls and Interest over time chart, activates the tab only
+for `tabs.captureVisibleTab`, crops the two-card union, returns to the source
+ChatGPT tab, and closes the temporary tab. Login, consent, CAPTCHA, and chart
+timeouts put the local operation into an attention state and keep the Trends
+tab open. The content script continues watching so a manually repaired page
+can resume.
+
+Autocomplete and Trends requested by the same assistant response share a
+persistent response bundle. A bundle is deliverable only after the response is
+final and every requested operation is complete. Automatic mode submits one
+message containing Markdown and/or the PNG. Semi-automatic mode prepares that
+same payload on the first toolbar click without Send. Successful delivery
+removes the screenshot data from extension storage.

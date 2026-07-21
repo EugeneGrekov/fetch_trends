@@ -36,6 +36,7 @@ The audit is based on:
 | Roadmap governance | `verified` | `docs/governance/roadmap-governance.md`, `scripts/check-roadmap.ts`, `npm run roadmap:check`, `docs/features/roadmap-governance/implementation.md` | Phase status rules and roadmap checks exist. |
 | Backlog prioritization | `verified` | `docs/governance/backlog-prioritization.md`, `docs/governance/templates/backlog-item.md`, `scripts/check-backlog.ts`, `npm run backlog:check`, `docs/features/backlog-prioritization/implementation.md` | Future work can be scored before planning or implementation. |
 | ChatGPT autocomplete bridge | `verified` | `extension/`, `src/autocomplete-bridge/`, `src/commands/autocomplete-api.ts`, `ecosystem.config.cjs`, `docs/features/chatgpt-autocomplete-bridge/implementation.md` | Private Chrome extension submits strict data-only requests to a token-authenticated sequential backend and returns cached Markdown reports. |
+| ChatGPT Google Trends bridge | `implemented` | `extension/trends-content-script.js`, `extension/service-worker.js`, `docs/features/chatgpt-google-trends-bridge/implementation.md` | The same extension captures one Google Trends request at a time and bundles its screenshot with any Autocomplete result from the same assistant response. Live signed-in Chrome smoke testing remains operator-side. |
 
 ## Commands Present
 

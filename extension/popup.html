@@ -53,8 +53,15 @@
 
       <section class="card">
         <h2>ChatGPT instructions</h2>
-        <p class="help">Send the reason for autocomplete research and its exact JSON format into the selected ChatGPT tab.</p>
+        <p class="help">Tell ChatGPT how to request Autocomplete research or a Google Trends screenshot.</p>
         <button id="inject" type="button">Inject and send instructions</button>
+      </section>
+
+      <section class="card">
+        <h2>Google Trends screenshots</h2>
+        <p id="trends-permission-status" class="help">Chrome screenshot access is not enabled.</p>
+        <button id="trends-permission" type="button">Allow screenshots</button>
+        <div id="bundles" class="jobs"><p class="empty">No Google Trends requests.</p></div>
       </section>
 
       <section class="card jobs-card">

@@ -149,10 +149,26 @@ Load the extension:
    the right side of the page.
 7. Enter `http://127.0.0.1:3099`, the local username, and the password once.
 8. Select Automatic or Semi-automatic mode after the connection succeeds.
+9. To enable Google Trends capture, select **Allow screenshots** once in the
+   drawer and accept Chrome's optional page-access prompt.
 
 The extension saves only the returned token. It does not save the password.
 The authentication file `config/autocomplete-users.json` and SQLite database
 are local generated files and are excluded from Git.
+
+For a Google Trends request, ChatGPT returns a ready-to-open HTTPS Explore URL
+with a non-empty `q` parameter. The extension opens one temporary Trends tab,
+waits for the search controls and Interest over time chart, briefly activates
+the tab to capture the visible page, crops the two selected cards, and returns
+to the source ChatGPT tab. If Google shows login, consent, or CAPTCHA, complete
+it in the tab that remains open. Capture resumes automatically when the chart
+appears, or it can be restarted from Retry in the drawer.
+
+If one assistant response contains both a strict `autocomplete_check` block
+and a Trends URL, the two operations run independently but are submitted back
+to ChatGPT once, after both are complete. Automatic mode sends that combined
+result. Semi-automatic mode prepares it for the first toolbar click without
+sending.
 
 ## Build A Local Package Directory
 
