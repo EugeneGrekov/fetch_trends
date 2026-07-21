@@ -14,14 +14,6 @@ let state;
 
 const ready = initialize();
 
-chrome.runtime.onInstalled.addListener((details) => {
-  void ready.then(async () => {
-    if (details.reason === 'install') {
-      await openMenu();
-    }
-  });
-});
-
 chrome.runtime.onStartup.addListener(() => {
   void ready;
 });
@@ -505,7 +497,7 @@ async function failTargets(job) {
 async function handleActionClick(tab) {
   const tabId = tab.id;
   if (tabId === undefined || !CHATGPT_URL.test(tab.url || '')) {
-    await openMenu(tabId);
+    await showSettingsPanel(tabId);
     return;
   }
 
@@ -552,7 +544,7 @@ async function handleActionClick(tab) {
     return;
   }
 
-  await openMenu(tabId);
+  await showSettingsPanel(tabId);
 }
 
 async function injectInstruction(tabId, text, send) {
@@ -761,14 +753,31 @@ function publicStoredJob(job) {
   };
 }
 
-async function openMenu(tabId) {
-  const query = tabId ? `?tabId=${tabId}` : '?onboarding=1';
-  await chrome.windows.create({
-    url: chrome.runtime.getURL(`popup.html${query}`),
-    type: 'popup',
-    width: 430,
-    height: 680,
-    focused: true,
+async function showSettingsPanel(tabId) {
+  const tab = tabId === undefined
+    ? undefined
+    : await chrome.tabs.get(tabId).catch(() => undefined);
+  if (!tab || !CHATGPT_URL.test(tab.url || '')) {
+    await showSettingsNotification('Open a chatgpt.com tab, then click the extension icon again.');
+    return;
+  }
+
+  const response = await sendTabMessage(tabId, {
+    type: 'settings:show',
+    tabId,
+  }).catch(() => undefined);
+  if (!response?.ok) {
+    await showSettingsNotification('Reload this ChatGPT tab, then click the extension icon again.');
+  }
+}
+
+async function showSettingsNotification(message) {
+  await chrome.notifications.create('autocomplete-settings-help', {
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('icons/icon.png'),
+    title: 'Autocomplete Bridge',
+    message,
+    priority: 1,
   });
 }
 

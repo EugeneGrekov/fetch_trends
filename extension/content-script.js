@@ -3,6 +3,7 @@
 
   const shared = globalThis.AutocompleteBridgeShared;
   const ASSISTANT_SELECTOR = '[data-message-author-role="assistant"]';
+  const SETTINGS_MESSAGE_SOURCE = 'fetch-trends-autocomplete-bridge';
   const processedMessages = new WeakSet();
   const candidateMessages = new Set();
   let connected = false;
@@ -10,6 +11,8 @@
   let scanTimer;
   let overlay;
   let overlayLabel;
+  let settingsBackdrop;
+  let settingsFrame;
   let currentUrl = location.href;
   let suppressNewMessagesUntil = 0;
   let stateLoaded = false;
@@ -60,9 +63,22 @@
       return undefined;
     }
 
+    if (message.type === 'settings:show') {
+      showSettingsPanel(Number(message.tabId));
+      sendResponse({ ok: true });
+      return undefined;
+    }
+
+    if (message.type === 'settings:hide') {
+      hideSettingsPanel();
+      sendResponse({ ok: true });
+      return undefined;
+    }
+
     if (message.type === 'result:auto') {
       void runMessageAction(async () => {
         hideOverlay();
+        hideSettingsPanel();
         await replaceComposerAndMaybeSend(message.markdown, true);
       }, sendResponse);
       return true;
@@ -70,6 +86,7 @@
 
     if (message.type === 'composer:insert') {
       void runMessageAction(async () => {
+        hideSettingsPanel();
         await replaceComposerAndMaybeSend(message.text, Boolean(message.send));
       }, sendResponse);
       return true;
@@ -77,6 +94,21 @@
 
     return undefined;
   });
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== settingsFrame?.contentWindow) {
+      return;
+    }
+    if (event.data?.source === SETTINGS_MESSAGE_SOURCE && event.data?.type === 'settings:close') {
+      hideSettingsPanel();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && settingsBackdrop?.isConnected) {
+      hideSettingsPanel();
+    }
+  }, true);
 
   void chrome.runtime.sendMessage({ type: 'content:ready' }).then((response) => {
     if (response) {
@@ -104,6 +136,7 @@
     }
 
     currentUrl = location.href;
+    hideSettingsPanel();
     suppressNewMessagesUntil = Date.now() + 1_500;
     candidateMessages.clear();
     for (const message of document.querySelectorAll(ASSISTANT_SELECTOR)) {
@@ -225,7 +258,7 @@
         inset: '0',
         justifyContent: 'center',
         position: 'fixed',
-        zIndex: '2147483647',
+        zIndex: '2147483646',
       });
 
       const spinner = document.createElement('div');
@@ -273,6 +306,58 @@
 
   function hideOverlay() {
     overlay?.remove();
+  }
+
+  function showSettingsPanel(tabId) {
+    if (!Number.isInteger(tabId) || tabId <= 0) {
+      return;
+    }
+
+    hideSettingsPanel();
+    settingsBackdrop = document.createElement('div');
+    settingsBackdrop.id = 'fetch-trends-settings-backdrop';
+    settingsBackdrop.setAttribute('role', 'dialog');
+    settingsBackdrop.setAttribute('aria-label', 'Fetch Trends Autocomplete Bridge settings');
+    settingsBackdrop.setAttribute('aria-modal', 'true');
+    Object.assign(settingsBackdrop.style, {
+      alignItems: 'stretch',
+      backdropFilter: 'blur(2px)',
+      background: 'rgba(15, 23, 42, 0.42)',
+      display: 'flex',
+      inset: '0',
+      justifyContent: 'flex-end',
+      position: 'fixed',
+      zIndex: '2147483647',
+    });
+
+    settingsFrame = document.createElement('iframe');
+    settingsFrame.id = 'fetch-trends-settings-frame';
+    settingsFrame.title = 'Fetch Trends Autocomplete Bridge settings';
+    settingsFrame.allow = 'clipboard-write';
+    settingsFrame.src = chrome.runtime.getURL(`popup.html?embedded=1&tabId=${tabId}`);
+    Object.assign(settingsFrame.style, {
+      background: '#f4f6fa',
+      border: '0',
+      boxShadow: '-18px 0 48px rgba(15, 23, 42, 0.24)',
+      height: '100%',
+      maxWidth: '100%',
+      width: 'min(440px, calc(100vw - 16px))',
+    });
+
+    settingsBackdrop.addEventListener('click', (event) => {
+      if (event.target === settingsBackdrop) {
+        hideSettingsPanel();
+      }
+    });
+    settingsFrame.addEventListener('load', () => settingsFrame?.focus(), { once: true });
+    settingsBackdrop.append(settingsFrame);
+    document.documentElement.append(settingsBackdrop);
+  }
+
+  function hideSettingsPanel() {
+    settingsBackdrop?.remove();
+    settingsBackdrop = undefined;
+    settingsFrame = undefined;
   }
 
   async function replaceComposerAndMaybeSend(text, shouldSend) {
