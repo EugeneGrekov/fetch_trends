@@ -3,6 +3,7 @@ import { Command, InvalidArgumentError } from 'commander';
 import { stdin } from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { PlaywrightAutocompleteCollector } from './collector.js';
+import { getOutputPaths } from './exporter.js';
 import { loadSeeds, resolveModifiers } from './input.js';
 import { resolveAutocompleteOutputPath } from './output.js';
 import { runAutocompleteResearch } from './runner.js';
@@ -76,6 +77,7 @@ export function buildAutocompleteProgram(): Command {
             `Completed ${report.finalSummary.completedPrefixCount}/${report.finalSummary.generatedPrefixCount} prefixes.`,
             `Collected ${report.finalSummary.predictionCount} predictions.`,
             `Unique normalized predictions: ${report.finalSummary.uniquePredictionCount}.`,
+            `Markdown report: ${getOutputPaths(out).md}`,
             report.finalSummary.errorCount > 0 ? `Errors: ${report.finalSummary.errorCount}.` : undefined,
             report.finalSummary.stopped ? 'Stopped early because Google showed a CAPTCHA or anti-bot page.' : undefined,
           ]
